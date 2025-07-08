@@ -64,6 +64,10 @@ public class YAMLCollection: IYAMLEntity, IClearable {
         _key = "<collection>";
     }
 
+    /// <summary>
+    /// Create deep copy from the current instance.
+    /// </summary>
+    /// <returns>Return a <see cref="YAMLCollection"/> instance.</returns>
     public YAMLCollection AsCopy() {
         _isCopied = true;
         return new YAMLCollection(key: this._key, collection: _collection);

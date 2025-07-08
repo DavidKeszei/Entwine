@@ -33,7 +33,10 @@ public static class YAMLSerializer {
     public static async Task<YAMLObject> Deserialize(string yaml) {
         using YamlLexer lexer = new YamlLexer(yaml);
 
+        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f1}MB");
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
+
+        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f1}MB");
         YAMLObject obj = new YAMLObject(key: "<root>");
 
         int count = 1;
@@ -134,10 +137,10 @@ public static class YAMLSerializer {
          Examples:
              ↱ This must be presented in tokens. (Vertical Collection Indicator)
             [-]["][Entry]["]  OR  [-][name][:]["][Entry]["] => In this scenario must be start with 2
-             0  1    2    3       0    1    2  3    4    5
+             0  1    2    3        0    1   2  3    4    5
 
             [name][:]["][Entry]["]  => In this scenario must be start with 1 (When not token range is not a vertical collection)
-             0   1   2   3    4    5
+               0   1   2   3    4 
          */
         int index = tokens[0].Type == YamlTokenType.VerticalArrayIndicator && 
                     (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
@@ -199,7 +202,7 @@ public static class YAMLSerializer {
                     IYAMLEntity[] collectionOf = new YAMLValue[arrayEnd - ++index];
 
                     for (int i = 0; i < collectionOf.Length; ++i)
-                        collectionOf[i] = new YAMLValue(key: $"{i}", tokens[index + i].Value);
+                        collectionOf[i] = new YAMLValue(key: "<no key>", tokens[index + i].Value);
 
                     IYAMLEntity _collection = (IYAMLEntity)new YAMLCollection(id, collectionOf);
                     obj.Add(id, _collection);
@@ -211,24 +214,26 @@ public static class YAMLSerializer {
                     break;
                 case YamlTokenType.MultilineStringIndicator:
                     int mStrEnd = FirstOrderOf(tokens[index].Order, tokens[(index + 2)..]);
+                    YAMLValue multilineString = null!;
 
                     if (mStrEnd != -1) {
-                        obj.Add(id, CreateMultilineString(tokens[(index + 2)..(index + 2 + mStrEnd)], saveNewlines: tokens[index].Value[0] != '|'));
-                        index += mStrEnd + 3;
+                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..(index + 2 + mStrEnd)], saveNewlines: tokens[index].Value[0] != '|'));
+                        index += mStrEnd + (tokens[index + 2].Type != YamlTokenType.VerticalArrayIndicator ? 2 : 3);
                     }
                     else {
-                        obj.Add(id, CreateMultilineString(tokens[(index + 2)..], saveNewlines: tokens[index].Value[0] != '|'));
+                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..], saveNewlines: tokens[index].Value[0] != '|'));
                         index = tokens.Length;
                     }
+
+                    if (tokens[0].Type == YamlTokenType.VerticalArrayIndicator) collection.InternalCollection.Add(item: multilineString);
+                    else obj.Add(key: id, entity: multilineString);
 
                     id = null!;
                     break;
                 case YamlTokenType.Value:
 
-                    if (tokens[0].Type == YamlTokenType.VerticalArrayIndicator) 
-                        collection.InternalCollection.Add(item: new YAMLValue(key: id ?? "<no key>", value: tokens[index].Value));
-                    else 
-                        obj.Add(id, tokens[index].Value);
+                    if (tokens[0].Type == YamlTokenType.VerticalArrayIndicator) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? "<no key>", value: tokens[index].Value));
+                    else obj.Add(id, tokens[index].Value);
 
                     id = null!;
                     ++index;
@@ -238,7 +243,7 @@ public static class YAMLSerializer {
         }
 
         if (tokens[0].Type == YamlTokenType.VerticalArrayIndicator) {
-            if (obj.Key != "<object>" && !obj.Key.SequenceEqual<char>(second: key)) 
+            if (!obj.IsEmpty) 
                 collection.InternalCollection.Add(item: obj.AsCopy());
 
             ObjectPool<YAMLObject>.Shared.Return(@object: obj);

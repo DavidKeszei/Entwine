@@ -26,6 +26,11 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
     public YAMLType Type { get => _type; }
 
     /// <summary>
+    /// Indicates the object has any properties inside themself.
+    /// </summary>
+    public bool IsEmpty { get => _entities.Count == 0; }
+
+    /// <summary>
     /// Get a property based on the <paramref name="keys"/>.
     /// </summary>
     /// <param name="keys">Route/Keys of the property in the object.</param>
@@ -94,6 +99,10 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
         _entities.Clear();
     }
 
+    /// <summary>
+    /// Create a deep copy from the current instance.
+    /// </summary>
+    /// <returns>Return a <see cref="YAMLObject"/> instance.</returns>
     internal YAMLObject AsCopy() {
         YAMLObject copy = new YAMLObject(key: _key[0..]);
         copy._entities = new Dictionary<string, IYAMLEntity>(collection: _entities);

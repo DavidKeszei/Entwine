@@ -29,8 +29,8 @@ internal class YamlLexer: IDisposable {
     /// Create tokens from a YAML string or stream.
     /// </summary>
     /// <returns>Return a collection of <see cref="YamlToken"/>s.</returns>
-    /// <exception cref="IndexOutOfRangeException"></exception>
-    public unsafe Task<List<YamlToken>> CreateTokens() {
+    /// <exception cref="IndexOutOfRangeException"/>
+    public Task<List<YamlToken>> CreateTokens() {
         List<YamlToken> tokens = new List<YamlToken>(capacity: _file.PossibleTokenCount);
         Span<char> buffer = stackalloc char[MAX_BUFFER_COUNT];
 
@@ -40,7 +40,6 @@ internal class YamlLexer: IDisposable {
         int multiStringOrder = -1;
         int line = 0;
 
-        int charPos = 0;
         YamlLexerFlag flags = 0;
 
         while (!this._file.EndOfStream) {
@@ -59,22 +58,12 @@ internal class YamlLexer: IDisposable {
                 flags &= ~YamlLexerFlag.IS_START_OF_THE_LINE;
             }
 
-            if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR && multiStringOrder == -1)
+            if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR && multiStringOrder == -1 && tokens[^2].Type == YamlTokenType.MultilineStringIndicator) 
                 multiStringOrder = order;
 
             switch (buffer[index - 1]) {
                 case ':':
-                    if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR && order == multiStringOrder) {
-                        flags &= ~YamlLexerFlag.IS_MULTILINE_STR;
-
-                        if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR)
-                            flags &= ~YamlLexerFlag.IS_STR;
-
-                        multiStringOrder = -1;
-                    }
-
-                    if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR || (flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR || 
-                        (flags & YamlLexerFlag.DELIMITER_IS_REACHED) == YamlLexerFlag.DELIMITER_IS_REACHED)
+                    if (IsMString(order, ref flags, ref multiStringOrder))
                         continue;
 
                     tokens.Add(new YamlToken(token: buffer[..(index - 1)].Trim().ToString(), YamlTokenType.Identifier, order));
@@ -100,11 +89,9 @@ internal class YamlLexer: IDisposable {
                     flags &= ~YamlLexerFlag.DELIMITER_IS_REACHED;
 
                     ++line;
-                    charPos = 0;
                     break;
                 case '-':
-                    if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR || (flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR ||
-                        (flags & YamlLexerFlag.DELIMITER_IS_REACHED) == YamlLexerFlag.DELIMITER_IS_REACHED)
+                    if (IsMString(order, ref flags, ref multiStringOrder))
                         continue;
 
                     while (_file.Peek() == ' ') {
@@ -192,17 +179,31 @@ internal class YamlLexer: IDisposable {
                     }
 
                     ++line;
-                    charPos = 0;
                     break;
             }
-
-            ++charPos;
         }
 
         if (index != 0)
             tokens.Add(new YamlToken(token: buffer[..index].ToString().Trim(), type: YamlTokenType.Value, order));
 
         return Task.FromResult<List<YamlToken>>(result: tokens);
+    }
+
+    private bool IsMString(int order, ref YamlLexerFlag flags, ref int multiStringOrder) {
+        if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR && order != multiStringOrder && multiStringOrder != -1) {
+            flags &= ~YamlLexerFlag.IS_MULTILINE_STR;
+
+            if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR)
+                flags &= ~YamlLexerFlag.IS_STR;
+
+            multiStringOrder = -1;
+        }
+
+        if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR || (flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR ||
+            (flags & YamlLexerFlag.DELIMITER_IS_REACHED) == YamlLexerFlag.DELIMITER_IS_REACHED)
+            return true;
+
+        return false;
     }
 
     private void CreateArray(List<YamlToken> tokens, int order, ReadOnlySpan<char> buff) {
@@ -225,7 +226,7 @@ internal class YamlLexer: IDisposable {
 }
 
 [Flags]
-file enum YamlLexerFlag: int {
+internal enum YamlLexerFlag: int {
     IS_STR = (1 << 0),
     IS_START_OF_THE_LINE = (1 << 1),
     IS_MULTILINE_STR = (1 << 2),

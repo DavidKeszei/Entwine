@@ -10,21 +10,26 @@ namespace YamlReader;
 internal class Program
 {
     static async Task Main(string[] args) {
-        string example =
-        """
-        texts: 
-            - Something
-            - 'In'
-            - "My"
-            - ass: Ass
+        string example = """
+         descriptions:
+                - desc: |
+                    This is: -not allowed by YAML lexer.
+                    This is: --not allowed by YAML lexer. ###
+                - desc: >
+                    This is not allowed by YAML lexer.
+                    This is not allowed by YAML lexer.
+        badges:
+            ok:
+                - 200
+                - The request is successful.
+            not found:
+                - 404
+                - The resource is not found.
         """;
-
-        long memory = GC.GetTotalMemory(false);
-        Console.Out.WriteLine(value: $"Currently used memory: {(memory / 1_000_000f):f2}MB");
 
         YAMLObject obj = await YAMLSerializer.Deserialize(yaml: example);
 
-        Console.Out.WriteLine(value: $"Currently used memory: {((GC.GetTotalMemory(false) - memory) / 1_000_000f):f2}MB");
+        Console.Out.WriteLine(value: $"\n{((YAMLValue)((YAMLCollection)obj[keys: ["descriptions"]])[0]).Serialize<string>()}");
         Console.ReadKey();
     }
 }
