@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
@@ -33,10 +34,14 @@ public static class YAMLSerializer {
     public static async Task<YAMLObject> Deserialize(string yaml) {
         using YamlLexer lexer = new YamlLexer(yaml);
 
-        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f1}MB");
+#if DEBUG
+        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f4}MB");
+#endif
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
 
-        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f1}MB");
+#if DEBUG
+        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f4}MB");
+#endif
         YAMLObject obj = new YAMLObject(key: "<root>");
 
         int count = 1;
@@ -59,7 +64,7 @@ public static class YAMLSerializer {
                     }
 
                     if (tokens[count - 1].Type == YamlTokenType.Delimiter) {
-                        int objEnd = FirstOrderOf(tokens[count].Order, tokens[(count + 1)..]);
+                        int objEnd = FirstOrderOf(tokens[count].Indentation, tokens[(count + 1)..]);
 
                         if (objEnd != -1) {
                             obj.Add(id, RecursivelyDeserialize(id, tokens[(count + 1)..(count + 1 + objEnd)]));
@@ -99,7 +104,7 @@ public static class YAMLSerializer {
                     break;
 
                 case YamlTokenType.MultilineStringIndicator:
-                    int mStrEnd = FirstOrderOf(tokens[count].Order, tokens[(count + 2)..]);
+                    int mStrEnd = FirstOrderOf(tokens[count].Indentation, tokens[(count + 2)..]);
 
                     if (mStrEnd != -1) {
                         obj.Add(id, CreateMultilineString(tokens[(count + 2)..(count + 2 + mStrEnd)], saveNewlines: tokens[count].Value[0] != '|'));
@@ -133,6 +138,10 @@ public static class YAMLSerializer {
         YAMLCollection collection = ObjectPool<YAMLCollection>.Shared.Rent();
         collection.Key = key;
 
+        /* Current entity is a collection or not? */
+        bool isCollection = tokens[0].Type == YamlTokenType.VerticalArrayIndicator;
+        string id = null!;
+
         /*
          Examples:
              ↱ This must be presented in tokens. (Vertical Collection Indicator)
@@ -141,12 +150,11 @@ public static class YAMLSerializer {
 
             [name][:]["][Entry]["]  => In this scenario must be start with 1 (When not token range is not a vertical collection)
                0   1   2   3    4 
-         */
-        int index = tokens[0].Type == YamlTokenType.VerticalArrayIndicator && 
-                    (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
+        */
+        int index = isCollection && (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
 
-        string id = null!;
-        bool isObject = false;
+        /* Indicates the current entry is a object or just a primitive value inside in a collection */
+        bool isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
 
         while (tokens.Length > index) {
             switch (tokens[index].Type) {
@@ -163,8 +171,8 @@ public static class YAMLSerializer {
                     }
 
                     if (tokens[index - 1].Type == YamlTokenType.Delimiter) {
-                        int objEnd = FirstOrderOf(tokens[index].Order, tokens[(index + 1)..]);
-                        isObject = true;
+                        int objEnd = FirstOrderOf(tokens[index].Indentation, tokens[(index + 1)..]);
+                        isCollectionObjectEntry = true;
 
                         if (objEnd != -1) {
                             obj.Add(id, RecursivelyDeserialize(id, tokens[(index + 1)..(index + 1 + objEnd)]));
@@ -183,13 +191,15 @@ public static class YAMLSerializer {
 
                     break;
                 case YamlTokenType.VerticalArrayIndicator:
-                    if (isObject) {
+                    if (isCollectionObjectEntry) {
+                        obj.Key = "<object>";
+
                         collection.InternalCollection.Add(item: obj.AsCopy());
                         obj.Clear();
                     }
 
                     index += tokens[index + 1].Type == YamlTokenType.Value ? 1 : 2;
-                    isObject = false;
+                    isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
                     break;
                 case YamlTokenType.InlineArrayIndicator:
                     int arrayEnd = IndexOf<YamlToken, char>(searchItem: ']', prop: static (x) => x.Value[0], tokens[index..]);
@@ -205,7 +215,9 @@ public static class YAMLSerializer {
                         collectionOf[i] = new YAMLValue(key: "<no key>", tokens[index + i].Value);
 
                     IYAMLEntity _collection = (IYAMLEntity)new YAMLCollection(id, collectionOf);
-                    obj.Add(id, _collection);
+
+                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: _collection);
+                    else obj.Add(id, _collection);
 
                     index = arrayEnd + 1;
                     break;
@@ -213,7 +225,7 @@ public static class YAMLSerializer {
                     ++index;
                     break;
                 case YamlTokenType.MultilineStringIndicator:
-                    int mStrEnd = FirstOrderOf(tokens[index].Order, tokens[(index + 2)..]);
+                    int mStrEnd = FirstOrderOf(tokens[index].Indentation, tokens[(index + 2)..]);
                     YAMLValue multilineString = null!;
 
                     if (mStrEnd != -1) {
@@ -225,24 +237,22 @@ public static class YAMLSerializer {
                         index = tokens.Length;
                     }
 
-                    if (tokens[0].Type == YamlTokenType.VerticalArrayIndicator) collection.InternalCollection.Add(item: multilineString);
+                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: multilineString);
                     else obj.Add(key: id, entity: multilineString);
 
                     id = null!;
                     break;
                 case YamlTokenType.Value:
-
-                    if (tokens[0].Type == YamlTokenType.VerticalArrayIndicator) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? "<no key>", value: tokens[index].Value));
+                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? "<no key>", value: tokens[index].Value));
                     else obj.Add(id, tokens[index].Value);
 
                     id = null!;
                     ++index;
-
                     break;
             }
         }
 
-        if (tokens[0].Type == YamlTokenType.VerticalArrayIndicator) {
+        if (isCollection) {
             if (!obj.IsEmpty) 
                 collection.InternalCollection.Add(item: obj.AsCopy());
 
@@ -277,7 +287,7 @@ public static class YAMLSerializer {
 
     private static int FirstOrderOf(int order, ReadOnlySpan<YamlToken> tokens) {
         for (int i = 0; i < tokens.Length; ++i) {
-            if (tokens[i].Order == order)
+            if (tokens[i].Indentation == order)
                 return i;
         }
 
@@ -293,5 +303,12 @@ public static class YAMLSerializer {
         }
 
         return -1;
+    }
+
+
+    private static bool IsCollectionObjectEntry(ReadOnlySpan<YamlToken> tokens) {
+        int vIndicator = IndexOf<YamlToken, char>(searchItem: '-', prop: static (x) => x.Value[0], tokens);
+        if (vIndicator != -1) return vIndicator > 3;
+        return tokens.Length > 5;
     }
 }

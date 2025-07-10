@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -11,7 +12,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent a collection inside a YAML string.
 /// </summary>
-public class YAMLCollection: IYAMLEntity, IClearable {
+public class YAMLCollection: IYAMLEntity, IClearable, IEnumerable<IYAMLEntity> {
     private readonly List<IYAMLEntity> _collection = null!;
     private string _key = string.Empty;
 
@@ -64,12 +65,17 @@ public class YAMLCollection: IYAMLEntity, IClearable {
         _key = "<collection>";
     }
 
+    public IEnumerator<IYAMLEntity> GetEnumerator()
+        => this._collection.GetEnumerator();
+
     /// <summary>
     /// Create deep copy from the current instance.
     /// </summary>
     /// <returns>Return a <see cref="YAMLCollection"/> instance.</returns>
-    public YAMLCollection AsCopy() {
+    internal YAMLCollection AsCopy() {
         _isCopied = true;
         return new YAMLCollection(key: this._key, collection: _collection);
     }
+
+    IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 }

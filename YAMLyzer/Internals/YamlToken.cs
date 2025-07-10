@@ -7,7 +7,7 @@ public readonly struct YamlToken {
     private readonly string _token = string.Empty;
     private readonly YamlTokenType _type = YamlTokenType.None;
 
-    private readonly int _order = 0;
+    private readonly int _indentation = 0;
 
     /// <summary>
     /// Raw value of the YAML token.
@@ -22,13 +22,13 @@ public readonly struct YamlToken {
     /// <summary>
     /// Indicates the order/indentation of the token.
     /// </summary>
-    public int Order { get => _order; }
+    public int Indentation { get => _indentation; }
 
     public YamlToken(string token, YamlTokenType type, int order) {
         this._token = token;
         this._type = type;
 
-        this._order = order;
+        this._indentation = order;
     }
 }
 
@@ -61,10 +61,6 @@ public enum YamlTokenType: byte {
     /// </summary>
     MultilineStringIndicator,
     /// <summary>
-    /// The current value is undefined. (The 'null' or '~' character.)
-    /// </summary>
-    Null,
-    /// <summary>
     /// Represent the start or the end of the inline array. (The '[' or the ']' character.)
     /// </summary>
     InlineArrayIndicator,
@@ -73,9 +69,8 @@ public enum YamlTokenType: byte {
     /// </summary>
     VerticalArrayIndicator,
     /// <summary>
-    /// Represent a comment in the YAML file. (The '#' character.)
+    /// Represent any value after the ':' character. (Exclude: ["\n", "\'", "\""])
     /// </summary>
-    Comment,
     Value
 }
 

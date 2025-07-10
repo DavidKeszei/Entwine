@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
@@ -82,8 +83,6 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
         return _entities.TryAdd(key, (IYAMLEntity)entity);
     }
 
-    internal bool Add(string key, IYAMLEntity entity) => _entities.TryAdd(key, entity);
-
     /// <summary>
     /// Reset the internal dictionary of the <see cref="YAMLObject"/> instance. 
     /// </summary>
@@ -98,6 +97,8 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
         _key = "<object>";
         _entities.Clear();
     }
+
+    internal bool Add(string key, IYAMLEntity entity) => _entities.TryAdd(key, entity);
 
     /// <summary>
     /// Create a deep copy from the current instance.
