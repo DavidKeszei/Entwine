@@ -3,8 +3,28 @@ Simple serialization library for YAML files & texts.
 
 ## Example Code
 ```cs
-string example = "dir: \"C:\\very_big_dir\\\"";
-YAMLObject obj = await YAMLSerializer.Deserialize(yaml: example);
+string yaml =
+    """
+    dependencies:
 
-Console.Out.WriteLine(value: $"Save part: {((YAMLValue)obj[keys: ["dir"]]).Serialize<string>()}");
+        # Implicit object declaration in a vertical collection for an item. (Keyless => (_key == "<object>" or "<no key>"))
+        - name: PowerToys
+          publisher: Microsoft
+          version: [0.92]
+          desc: >
+            Provides ultimate help in your .NET development pipeline!
+            See more: ...
+
+        # Explicit object declaration in a vertical collection for an item.
+        - pack:
+            name: Visual Studio Community Edition
+            publisher: Microsoft
+            versions: [latest, 17.14.6]
+            desc: ~
+    """;
+
+YAMLObject @object = await YAMLSerializer.Deserialize(yaml);
+List<YAMLObject> _c = ((YAMLCollection)@object[keys: ["dependencies"]]).Where(static x => x is YAMLObject)
+                                                                       .Select(static x => (YAMLObject)x)
+                                                                       .ToList();
 ```
