@@ -362,3 +362,5 @@ MigrationBackup/
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
 /YamlReader/YamlReader.csproj
+/YamlReader/Program.cs
+/YAMLyzer.sln
