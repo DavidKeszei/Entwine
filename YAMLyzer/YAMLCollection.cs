@@ -49,7 +49,7 @@ public class YAMLCollection: IYAMLEntity, IClearable, IEnumerable<IYAMLEntity> {
     }
 
     public YAMLCollection() {
-        this._key = "<collection>";
+        this._key = IYAMLEntity.KEYLESS;
         this._collection = new List<IYAMLEntity>();
     }
 
@@ -62,7 +62,7 @@ public class YAMLCollection: IYAMLEntity, IClearable, IEnumerable<IYAMLEntity> {
         }
 
         _collection.Clear();
-        _key = "<collection>";
+        _key = IYAMLEntity.KEYLESS;
     }
 
     public IEnumerator<IYAMLEntity> GetEnumerator()

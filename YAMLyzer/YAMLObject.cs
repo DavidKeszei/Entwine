@@ -41,16 +41,14 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
     public IYAMLEntity this[string[] keys] { 
         get {
             IYAMLEntity? entity = _entities[keys[0]];
-            if(entity is not YAMLObject && keys.Length == 1) return entity;
-
-            YAMLObject? obj = (YAMLObject)entity;
+            YAMLObject obj = null!;
 
             for (int i = 1; i < keys.Length; ++i) {
-                if ((obj = (entity as YAMLObject)) != null && obj!._entities.TryGetValue(key: keys[i], out entity))
+                if ((obj = (entity as YAMLObject) ?? null!) != null && obj!._entities.TryGetValue(key: keys[i], out entity))
                     continue;
 
                 if (obj != null) throw new KeyNotFoundException(message: $"The key (\'{keys[i]}\') isn't exists in the YAML object. Are you sure you not mistyped the key(s)?");
-                else throw new FieldAccessException(message: $"To many keys declared for to reach the property. (Current key index: {i})");
+                else throw new FieldAccessException(message: $"To many keys declared for reach the property.");
             }
 
             return entity;
@@ -63,20 +61,20 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
     }
 
     public YAMLObject() {
-        this._key = "<object>";
+        this._key = IYAMLEntity.KEYLESS;
         this._entities = new Dictionary<string, IYAMLEntity>();
     }
 
-    public bool Add(string key, string value) => _entities.TryAdd(key, new YAMLValue(key, value));
+    public bool Write(string key, string value) => _entities.TryAdd(key, new YAMLValue(key, value));
 
-    public bool Add<T>(string key, T value, string format = null!, IFormatProvider provider = null!) where T: IFormattable {
+    public bool Write<T>(string key, T value, string format = null!, IFormatProvider provider = null!) where T: IFormattable {
         provider ??= CultureInfo.CurrentCulture;
 
         IYAMLEntity entity = new YAMLValue(key, value.ToString(format, provider));
         return _entities.TryAdd(key, entity);
     }
 
-    public bool Add<T>(string key, T value) where T: IYAMLSerializable {
+    public bool Write<T>(string key, T value) where T: IYAMLSerializable {
         IWriteableYAMLEntity entity = (IWriteableYAMLEntity)new YAMLObject(key);
         value.ToYAML(in entity);
 
@@ -84,7 +82,7 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
     }
 
     /// <summary>
-    /// Reset the internal dictionary of the <see cref="YAMLObject"/> instance. 
+    /// Clear/Reset the current <see cref="YAMLObject"/> instance. 
     /// </summary>
     public void Clear() {
         if (!_isCopied) {
@@ -94,7 +92,7 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
             }
         }
 
-        _key = "<object>";
+        _key = IYAMLEntity.KEYLESS;
         _entities.Clear();
     }
 

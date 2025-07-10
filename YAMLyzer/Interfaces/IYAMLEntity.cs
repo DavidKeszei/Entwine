@@ -13,6 +13,11 @@ namespace YAMLyzer;
 public interface IYAMLEntity {
 
     /// <summary>
+    /// The keyless constant for <see cref="YAMLObject"/>.
+    /// </summary>
+    public const string KEYLESS = "<no key>";
+
+    /// <summary>
     /// Key of the object in the YAML document.
     /// </summary>
     public string Key { get; }

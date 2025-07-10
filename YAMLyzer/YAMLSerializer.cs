@@ -92,7 +92,7 @@ public static class YAMLSerializer {
                     IYAMLEntity[] collectionOf = new YAMLValue[arrayEnd - ++count];
 
                     for (int i = 0; i < collectionOf.Length; ++i)
-                        collectionOf[i] = new YAMLValue(key: "<no key>", tokens[count + i].Value);
+                        collectionOf[i] = new YAMLValue(key: IYAMLEntity.KEYLESS, tokens[count + i].Value);
 
                     IYAMLEntity _collection = (IYAMLEntity)new YAMLCollection(id, collectionOf);
                     obj.Add(id, _collection);
@@ -107,18 +107,18 @@ public static class YAMLSerializer {
                     int mStrEnd = FirstOrderOf(tokens[count].Indentation, tokens[(count + 2)..]);
 
                     if (mStrEnd != -1) {
-                        obj.Add(id, CreateMultilineString(tokens[(count + 2)..(count + 2 + mStrEnd)], saveNewlines: tokens[count].Value[0] != '|'));
+                        obj.Write(id, CreateMultilineString(tokens[(count + 2)..(count + 2 + mStrEnd)], saveNewlines: tokens[count].Value[0] != '|'));
                         count += mStrEnd + 3;
                     }
                     else {
-                        obj.Add(id, CreateMultilineString(tokens[(count + 2)..], saveNewlines: tokens[count].Value[0] != '|'));
+                        obj.Write(id, CreateMultilineString(tokens[(count + 2)..], saveNewlines: tokens[count].Value[0] != '|'));
                         count = tokens.Length;
                     }
 
                     id = null!;
                     break;
                 case YamlTokenType.Value:
-                    obj.Add(id, tokens[count].Value);
+                    obj.Write(id, tokens[count].Value);
 
                     id = null!;
 
@@ -192,7 +192,7 @@ public static class YAMLSerializer {
                     break;
                 case YamlTokenType.VerticalArrayIndicator:
                     if (isCollectionObjectEntry) {
-                        obj.Key = "<object>";
+                        obj.Key = IYAMLEntity.KEYLESS;
 
                         collection.InternalCollection.Add(item: obj.AsCopy());
                         obj.Clear();
@@ -212,7 +212,7 @@ public static class YAMLSerializer {
                     IYAMLEntity[] collectionOf = new YAMLValue[arrayEnd - ++index];
 
                     for (int i = 0; i < collectionOf.Length; ++i)
-                        collectionOf[i] = new YAMLValue(key: "<no key>", tokens[index + i].Value);
+                        collectionOf[i] = new YAMLValue(key: IYAMLEntity.KEYLESS, tokens[index + i].Value);
 
                     IYAMLEntity _collection = (IYAMLEntity)new YAMLCollection(id, collectionOf);
 
@@ -243,8 +243,8 @@ public static class YAMLSerializer {
                     id = null!;
                     break;
                 case YamlTokenType.Value:
-                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? "<no key>", value: tokens[index].Value));
-                    else obj.Add(id, tokens[index].Value);
+                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? IYAMLEntity.KEYLESS, value: tokens[index].Value));
+                    else obj.Write(id, tokens[index].Value);
 
                     id = null!;
                     ++index;
