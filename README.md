@@ -7,7 +7,7 @@ string yaml =
     """
     dependencies:
 
-        # Implicit object declaration in a vertical collection for an item. (Keyless => (_key == "<object>" or "<no key>"))
+        # Implicit object declaration in a vertical collection for an item.
         - name: PowerToys
           publisher: Microsoft
           version: [0.92]
