@@ -21,5 +21,5 @@ public interface IYAMLSerializable {
     /// [Deserialization] Setting up the current object properties from the <see cref="YAMLObject"/> object.
     /// </summary>
     /// <param name="obj">YAML representation of the object.</param>
-    public void FromYAML(in YAMLObject obj);
+    public void FromYAML(in IReadableYAMLEntity obj);
 }

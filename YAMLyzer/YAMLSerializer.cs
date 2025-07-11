@@ -17,11 +17,10 @@ namespace YAMLyzer;
 public static class YAMLSerializer {
 
     public static async Task<T?> Deserialize<T>(string yaml) where T: IYAMLSerializable, new() {
-        YAMLObject obj = await Deserialize(yaml);
-
+        IReadableYAMLEntity obj = await Deserialize(yaml);
         T deserialized = new T();
-        deserialized.FromYAML(in obj);
 
+        deserialized.FromYAML(in obj);
         return deserialized;
     }
 
@@ -29,19 +28,11 @@ public static class YAMLSerializer {
     /// Deserialize a YAML <see cref="string"/> to a <see cref="YAMLObject"/> representation.
     /// </summary>
     /// <param name="yaml">The YAML string.</param>
-    /// <returns>Return a <see cref="YAMLObject"/> instance.</returns>
+    /// <returns>Return a <see cref="IReadableYAMLEntity"/> instance.</returns>
     /// <exception cref="FormatException"/>
-    public static async Task<YAMLObject> Deserialize(string yaml) {
+    public static async Task<IReadableYAMLEntity> Deserialize(string yaml) {
         using YamlLexer lexer = new YamlLexer(yaml);
-
-#if DEBUG
-        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f4}MB");
-#endif
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
-
-#if DEBUG
-        Console.WriteLine($"Mem. Usage: {(GC.GetTotalMemory(false) / 1000000f):f4}MB");
-#endif
         YAMLObject obj = new YAMLObject(key: "<root>");
 
         int count = 1;

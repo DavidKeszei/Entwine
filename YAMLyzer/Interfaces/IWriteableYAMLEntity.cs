@@ -9,7 +9,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Provides functions for modify a <see cref="YAMLObject"/> state.
 /// </summary>
-public interface IWriteableYAMLEntity {
+public interface IWriteableYAMLEntity: IYAMLEntity {
 
     /// <summary>
     /// Write primitive value to the current <see cref="YAMLObject"/> instance.

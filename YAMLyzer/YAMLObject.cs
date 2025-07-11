@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using YAMLyzer.Interfaces;
@@ -12,7 +13,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent a YAML object from any source.
 /// </summary>
-public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
+public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
     private Dictionary<string, IYAMLEntity> _entities = null!;
     private string _key = "<root>";
 
@@ -63,6 +64,27 @@ public class YAMLObject: IYAMLEntity, IWriteableYAMLEntity, IClearable {
     public YAMLObject() {
         this._key = IYAMLEntity.KEYLESS;
         this._entities = new Dictionary<string, IYAMLEntity>();
+    }
+
+    public T? Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
+        IYAMLEntity entity = _entities[route[0]];
+
+        if(entity is IReadableYAMLEntity && route.Length > 1)
+            entity = ((IReadableYAMLEntity)entity).Read<IYAMLEntity>(route: route[1..])!;
+
+        if (entity == null || !(entity is T))
+            return default;
+
+        return Unsafe.As<IYAMLEntity, T>(ref entity!);
+    }
+
+    public T? Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T> {
+        YAMLValue? entity = this.Read<YAMLValue>(route);
+
+        if (entity == null! || entity.Serialize<T>(out T? @result, provider)) 
+            return default!;
+
+        return @result;
     }
 
     public bool Write(string key, string value) => _entities.TryAdd(key, new YAMLValue(key, value));
