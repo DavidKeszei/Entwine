@@ -25,7 +25,7 @@ public static class YAMLSerializer {
     }
 
     /// <summary>
-    /// Deserialize a YAML <see cref="string"/> to a <see cref="YAMLObject"/> representation.
+    /// Deserialize a YAML <see cref="string"/> to a <see cref="IReadableYAMLEntity"/> representation.
     /// </summary>
     /// <param name="yaml">The YAML string.</param>
     /// <returns>Return a <see cref="IReadableYAMLEntity"/> instance.</returns>
@@ -123,13 +123,16 @@ public static class YAMLSerializer {
     }
 
     private static IYAMLEntity RecursivelyDeserialize(string key, ReadOnlySpan<YamlToken> tokens) {
+        if(tokens.Length == 0)
+            throw new FormatException(message: $"If you want to create a collection or an object, then must be specify 1 item, field or value. (Key: {key})");
+
         YAMLObject obj = ObjectPool<YAMLObject>.Shared.Rent();
         obj.Key = key;
 
         YAMLCollection collection = ObjectPool<YAMLCollection>.Shared.Rent();
         collection.Key = key;
 
-        /* Current entity is a collection or not? */
+        /* Current entity is a vertical collection or not? */
         bool isCollection = tokens[0].Type == YamlTokenType.VerticalArrayIndicator;
         string id = null!;
 
@@ -142,7 +145,7 @@ public static class YAMLSerializer {
             [name][:]["][Entry]["]  => In this scenario must be start with 1 (When not token range is not a vertical collection)
                0   1   2   3    4 
         */
-        int index = isCollection && (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
+        int index = isCollection && tokens.Length > 2 && (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
 
         /* Indicates the current entry is a object or just a primitive value inside in a collection */
         bool isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
@@ -221,7 +224,10 @@ public static class YAMLSerializer {
 
                     if (mStrEnd != -1) {
                         multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..(index + 2 + mStrEnd)], saveNewlines: tokens[index].Value[0] != '|'));
-                        index += mStrEnd + (tokens[index + 2].Type != YamlTokenType.VerticalArrayIndicator ? 2 : 3);
+                        index += mStrEnd;
+
+                        if(tokens[index + 2].Type == YamlTokenType.VerticalArrayIndicator) index += 2;
+                        else index += 3;
                     }
                     else {
                         multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..], saveNewlines: tokens[index].Value[0] != '|'));
@@ -235,7 +241,7 @@ public static class YAMLSerializer {
                     break;
                 case YamlTokenType.Value:
                     if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? IYAMLEntity.KEYLESS, value: tokens[index].Value));
-                    else obj.Write(id, tokens[index].Value);
+                    else obj.Write(id ?? IYAMLEntity.KEYLESS, tokens[index].Value);
 
                     id = null!;
                     ++index;
@@ -295,7 +301,6 @@ public static class YAMLSerializer {
 
         return -1;
     }
-
 
     private static bool IsCollectionObjectEntry(ReadOnlySpan<YamlToken> tokens) {
         int vIndicator = IndexOf<YamlToken, char>(searchItem: '-', prop: static (x) => x.Value[0], tokens);

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides serialization configuration methods for object(s).
+/// Provides de-/serialization mechanisms for object(s).
 /// </summary>
 public interface IYAMLSerializable {
 

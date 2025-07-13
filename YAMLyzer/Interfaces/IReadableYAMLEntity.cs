@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides reading functions for a <see cref="IYAMLEntity"/>.
+/// Provides reading functions for an <see cref="IYAMLEntity"/>.
 /// </summary>
 public interface IReadableYAMLEntity: IYAMLEntity {
 
@@ -19,16 +19,16 @@ public interface IReadableYAMLEntity: IYAMLEntity {
     /// <returns>Return a(n) <typeparamref name="T"/> instance.</returns>
     /// <exception cref="IndexOutOfRangeException"/>
     /// <exception cref="ArgumentException"/>
-    public T? Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity;
+    public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity;
 
     /// <summary>
     /// Read primitive value from the <see cref="IReadableYAMLEntity"/> based on the route.
     /// </summary>
-    /// <typeparam name="T">Return type of the primitve value.</typeparam>
+    /// <typeparam name="T">Return type of the primitive value.</typeparam>
     /// <param name="route">Access route/Keys of the value inside the <see cref="IYAMLEntity"/>.</param>
-    /// <param name="provider">Current culture of the envoriment.</param>
-    /// <returns>Return a(n) <typeparamref name="T"/> instance. If type is incorrect. then return <see langword="null"/>.</returns>
+    /// <param name="provider">Current culture of the environment.</param>
+    /// <returns>Return a(n) <typeparamref name="T"/> instance. If type is incorrect, then return <see langword="null"/>.</returns>
     /// <exception cref="IndexOutOfRangeException"/>
     /// <exception cref="ArgumentException"/>
-    public T? Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T : IParsable<T>;
+    public T? Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T>;
 }

@@ -21,10 +21,11 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
     private bool _isCopied = false;
 
     /// <summary>
-    /// Get 
+    /// Get an <see cref="IYAMLEntity"/> based on the <paramref name="index"/>.
     /// </summary>
-    /// <param name="index"></param>
-    /// <returns></returns>
+    /// <param name="index">Position of the <see cref="IYAMLEntity"/>.</param>
+    /// <returns>Return an <see cref="IYAMLEntity"/> instance.</returns>
+    /// <exception cref="IndexOutOfRangeException"/>
     public IYAMLEntity this[int index] { get => this._collection[index]; }
 
     /// <summary>
@@ -54,7 +55,7 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
         this._collection = new List<IYAMLEntity>();
     }
 
-    public T? Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
+    public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
         if (!int.TryParse(route[0], out int index))
             throw new ArgumentException(message: $"The parameter {nameof(route)} is not a numeric string literal.");
 
@@ -63,10 +64,23 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
         if (route.Length > 1 && entity is IReadableYAMLEntity @object)
             entity = @object.Read<T>(route[1..]);
 
-        if (entity == null || !(entity is T))
-            return default;
-
+        if (entity == null || !(entity is T)) return default!;
         return Unsafe.As<IYAMLEntity, T>(ref entity);
+    }
+
+    public T Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T> {
+        IYAMLEntity readable = null!;
+
+        if(int.TryParse(s: route[0], out int index)) readable = _collection[index];
+        else throw new ArgumentException(message: "The index can't converter to a number value.");
+
+        if(route.Length > 1 && readable is IReadableYAMLEntity @object)
+            readable = @object.Read<IYAMLEntity>(route[1..]);
+
+        if(readable is YAMLValue value && value.Serialize<T>(out T? @result, provider))
+            return @result!;
+
+        return default!;
     }
 
     public void Clear() {

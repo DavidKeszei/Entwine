@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Text;
@@ -39,5 +40,7 @@ public class YAMLValue: IYAMLEntity {
     /// </summary>
     /// <typeparam name="T">Type of the primitive.</typeparam>
     /// <exception cref="FormatException"/>
-    public T Serialize<T>() where T: IParsable<T> => T.Parse(_value, CultureInfo.CurrentCulture);
+    public T Serialize<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(_value, provider);
+
+    public override string ToString() => $"{_key}: {_value}";
 }

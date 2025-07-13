@@ -66,14 +66,14 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
         this._entities = new Dictionary<string, IYAMLEntity>();
     }
 
-    public T? Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
+    public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
         IYAMLEntity entity = _entities[route[0]];
 
         if(entity is IReadableYAMLEntity && route.Length > 1)
             entity = ((IReadableYAMLEntity)entity).Read<IYAMLEntity>(route: route[1..])!;
 
         if (entity == null || !(entity is T))
-            return default;
+            return default!;
 
         return Unsafe.As<IYAMLEntity, T>(ref entity!);
     }
@@ -81,7 +81,7 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
     public T? Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T> {
         YAMLValue? entity = this.Read<YAMLValue>(route);
 
-        if (entity == null! || entity.Serialize<T>(out T? @result, provider)) 
+        if (entity == null! || !entity.Serialize<T>(out T? @result, provider)) 
             return default!;
 
         return @result;
