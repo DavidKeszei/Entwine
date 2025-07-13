@@ -3,7 +3,7 @@ Simple and intuitive YAML serialization for C#/.NET. Get up and running quickly 
 
 ## Example Code
 ```cs
-        string yaml =
+string yaml =
             """
             dependencies:
 
@@ -23,6 +23,6 @@ Simple and intuitive YAML serialization for C#/.NET. Get up and running quickly 
                     desc: ~
             """;
 
-        IReadableYAMLEntity @object = await YAMLSerializer.Deserialize(yaml);
-        string packageName = @object.Read<string>(route: [ "dependencies", "0", "desc" ])!;
+IReadableYAMLEntity @object = await YAMLSerializer.Deserialize(yaml);
+string packageName = @object.Read<string>(route: [ "dependencies", "0", "desc" ])!;
 ```
