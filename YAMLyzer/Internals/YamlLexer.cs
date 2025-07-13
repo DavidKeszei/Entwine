@@ -11,7 +11,6 @@ namespace YAMLyzer;
 /// Helper class for create lexical tokens from a YAML string.
 /// </summary>
 internal class YamlLexer: IDisposable {
-    private const int PREDEFINED_CAP = (1 << 16);
     internal const int MAX_BUFFER_COUNT = 4096;
 
     private YamlTokenSource _file = default;
