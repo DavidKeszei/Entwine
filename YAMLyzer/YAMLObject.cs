@@ -28,7 +28,7 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
     public YAMLType Type { get => _type; }
 
     /// <summary>
-    /// Indicates the object has any properties inside themself.
+    /// Indicates the object has any properties inside herself.
     /// </summary>
     public bool IsEmpty { get => _entities.Count == 0; }
 
@@ -78,11 +78,11 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
         return Unsafe.As<IYAMLEntity, T>(ref entity!);
     }
 
-    public T? Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T> {
+    public T? Read<T>(ReadOnlySpan<string> route, T valueOnError = default!, IFormatProvider provider = null!) where T: IParsable<T> {
         YAMLValue? entity = this.Read<YAMLValue>(route);
 
         if (entity == null! || !entity.Serialize<T>(out T? @result, provider)) 
-            return default!;
+            return valueOnError;
 
         return @result;
     }

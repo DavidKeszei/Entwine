@@ -30,5 +30,5 @@ public interface IReadableYAMLEntity: IYAMLEntity {
     /// <returns>Return a(n) <typeparamref name="T"/> instance. If type is incorrect, then return <see langword="null"/>.</returns>
     /// <exception cref="IndexOutOfRangeException"/>
     /// <exception cref="ArgumentException"/>
-    public T? Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T>;
+    public T? Read<T>(ReadOnlySpan<string> route, T valueOnError = default!, IFormatProvider provider = null!) where T: IParsable<T>;
 }

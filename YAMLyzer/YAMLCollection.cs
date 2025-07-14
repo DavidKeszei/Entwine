@@ -57,7 +57,7 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
 
     public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
         if (!int.TryParse(route[0], out int index))
-            throw new ArgumentException(message: $"The parameter {nameof(route[0])} is not a numeric string literal.");
+            throw new ArgumentException(message: $"The parameter is not a numeric string literal. (Route: {string.Join('-', route!)})");
 
         IYAMLEntity? entity = _collection[index];
 
@@ -68,7 +68,7 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
         return Unsafe.As<IYAMLEntity, T>(ref entity);
     }
 
-    public T Read<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T> {
+    public T Read<T>(ReadOnlySpan<string> route, T valueOnError = default!, IFormatProvider provider = null!) where T: IParsable<T> {
         IYAMLEntity readable = null!;
 
         if(int.TryParse(s: route[0], out int index)) readable = _collection[index];
@@ -80,7 +80,7 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
         if(readable is YAMLValue value && value.Serialize<T>(out T? @result, provider))
             return @result!;
 
-        return default!;
+        return valueOnError;
     }
 
     public void Clear() {

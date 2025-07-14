@@ -32,8 +32,14 @@ public class YAMLValue: IYAMLEntity {
     /// <typeparam name="T">Type of the primitive.</typeparam>
     /// <param name="result">Result of the serialization.</param>
     /// <returns>If the value is serializable, then return <see langword="true"/>. Otherwise return <see langword="false"/>.</returns>
-    public bool Serialize<T>(out T? result, IFormatProvider provider = null!) where T: IParsable<T>
-        => T.TryParse(_value, provider, out result);
+    public bool Serialize<T>(out T? result, IFormatProvider provider = null!) where T: IParsable<T> {
+        result = default!;
+
+        if(_value[0] == '~' || _value == "null")
+            return false;
+
+        return T.TryParse(_value, provider, out result);
+    }
 
     /// <summary>
     /// Serialize the YAML value to a primitive type.
