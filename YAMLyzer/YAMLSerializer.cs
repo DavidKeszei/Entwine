@@ -12,7 +12,7 @@ using YAMLyzer.Internals;
 namespace YAMLyzer;
 
 /// <summary>
-/// Helper class for serialize objects/values to YAML form and vice-versa.
+/// Helper class for serialize objects/values to YAML and vice-versa.
 /// </summary>
 public static class YAMLSerializer {
 
@@ -25,10 +25,10 @@ public static class YAMLSerializer {
     }
 
     /// <summary>
-    /// Deserialize an YAML <see cref="string"/> to a <see cref="IReadableYAMLEntity"/> representation.
+    /// Deserialize an YAML <see cref="string"/> to an <see cref="IReadableYAMLEntity"/> representation.
     /// </summary>
     /// <param name="yaml">The YAML string.</param>
-    /// <returns>Return a <see cref="IReadableYAMLEntity"/> instance.</returns>
+    /// <returns>Return an <see cref="IReadableYAMLEntity"/> instance.</returns>
     /// <exception cref="FormatException"/>
     public static async Task<IReadableYAMLEntity> Deserialize(string yaml) {
         using YamlLexer lexer = new YamlLexer(yaml);
