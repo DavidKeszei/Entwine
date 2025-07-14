@@ -4,25 +4,29 @@ Simple and intuitive YAML serialization for C#/.NET. Get up and running quickly 
 ## Example Code
 ```cs
 string yaml =
-            """
-            dependencies:
+    """
+    # This is incorrect for a number. If you specify a custom default value, then you get that in this case!
+    version: f11
+    lastUpdate: 2025-07-14
+    dependencies:
 
-                # Implicit object declaration in a vertical collection for an item.
-                - name: PowerToys
-                  publisher: Microsoft
-                  version: [0.92]
-                  desc: >
-                    Provides ultimate help in your .NET development pipeline!
-                    See more: ...
+        # Implicit object declaration in a vertical collection for an item.
+        - name: PowerToys
+          publisher: Microsoft5
+          version: [0.92]
+          desc: |
+            Provides ultimate help in your .NET development pipeline!
 
-                # Explicit object declaration in a vertical collection for an item.
-                - package:
-                    name: Visual Studio Community Edition
-                    publisher: Microsoft
-                    versions: [latest, 17.14.6]
-                    desc: ~
-            """;
+        # Explicit object declaration in a vertical collection for an item.
+        - package:
+            name: Visual Studio Community Edition
+            publisher: Microsoft
+            versions: [latest, 17.14.6]
+            desc: ~
+    """;
 
 IReadableYAMLEntity @object = await YAMLSerializer.Deserialize(yaml);
-string packageName = @object.Read<string>(route: [ "dependencies", "0", "desc" ])!;
+
+int version = @object.Read<int>(route: [ "version" ], valueOnError: -1)!;
+DateOnly date = @object.Read<DateOnly>(route: ["lastUpdate"], provider: DateTimeFormatInfo.CurrentInfo);
 ```
