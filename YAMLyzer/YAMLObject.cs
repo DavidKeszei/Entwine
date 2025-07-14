@@ -17,8 +17,8 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
     private Dictionary<string, IYAMLEntity> _entities = null!;
     private string _key = "<root>";
 
-    private YAMLType _type = YAMLType.Object;
     private bool _isCopied = false;
+    private readonly YAMLType _type = YAMLType.Object;
 
     /// <summary>
     /// Key of the YAML object. If this name equal with <b>root</b>, then this is the root object.
@@ -58,7 +58,7 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
 
     public YAMLObject(string key) {
         this._key = key;
-        this._entities = new Dictionary<string, IYAMLEntity>(capacity: 128);
+        this._entities = new Dictionary<string, IYAMLEntity>(capacity: 16);
     }
 
     public YAMLObject() {
@@ -69,8 +69,8 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
     public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
         IYAMLEntity entity = _entities[route[0]];
 
-        if(entity is IReadableYAMLEntity && route.Length > 1)
-            entity = ((IReadableYAMLEntity)entity).Read<IYAMLEntity>(route: route[1..])!;
+        if(entity is IReadableYAMLEntity @object && route.Length > 1)
+            entity = @object.Read<IYAMLEntity>(route: route[1..])!;
 
         if (entity == null || !(entity is T))
             return default!;

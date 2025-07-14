@@ -11,7 +11,7 @@ using YAMLyzer.Interfaces;
 namespace YAMLyzer;
 
 /// <summary>
-/// Represent a collection inside a YAML string.
+/// Represent a collection inside a YAML document.
 /// </summary>
 public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAMLEntity {
     private readonly List<IYAMLEntity> _collection = null!;
@@ -57,7 +57,7 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
 
     public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
         if (!int.TryParse(route[0], out int index))
-            throw new ArgumentException(message: $"The parameter {nameof(route)} is not a numeric string literal.");
+            throw new ArgumentException(message: $"The parameter {nameof(route[0])} is not a numeric string literal.");
 
         IYAMLEntity? entity = _collection[index];
 

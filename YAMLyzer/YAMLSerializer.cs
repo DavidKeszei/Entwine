@@ -25,7 +25,7 @@ public static class YAMLSerializer {
     }
 
     /// <summary>
-    /// Deserialize a YAML <see cref="string"/> to a <see cref="IReadableYAMLEntity"/> representation.
+    /// Deserialize an YAML <see cref="string"/> to a <see cref="IReadableYAMLEntity"/> representation.
     /// </summary>
     /// <param name="yaml">The YAML string.</param>
     /// <returns>Return a <see cref="IReadableYAMLEntity"/> instance.</returns>

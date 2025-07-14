@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides reading functions for an <see cref="IYAMLEntity"/>.
+/// Provides reading mechanism for an <see cref="IYAMLEntity"/>.
 /// </summary>
 public interface IReadableYAMLEntity: IYAMLEntity {
 

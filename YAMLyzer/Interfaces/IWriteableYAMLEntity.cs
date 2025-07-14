@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides functions for modify a <see cref="YAMLObject"/> state.
+/// Provides modify mechanism for an <see cref="IYAMLEntity"/>.
 /// </summary>
 public interface IWriteableYAMLEntity: IYAMLEntity {
 
@@ -23,7 +23,7 @@ public interface IWriteableYAMLEntity: IYAMLEntity {
     public bool Write<T>(string key, T value, string format = null!, IFormatProvider provider = null!) where T: IFormattable;
 
     /// <summary>
-    /// Write string to the current <see cref="YAMLObject"/> instance.
+    /// Write string to the current <see cref="IWriteableYAMLEntity"/> instance.
     /// </summary>
     /// <param name="key">Key of the value.</param>
     /// <param name="value">The string value.</param>
@@ -31,7 +31,7 @@ public interface IWriteableYAMLEntity: IYAMLEntity {
     public bool Write(string key, string value);
 
     /// <summary>
-    /// Write <typeparamref name="T"/> to the YAML object.
+    /// Write <typeparamref name="T"/> to a <see cref="IWriteableYAMLEntity"/>.
     /// </summary>
     /// <typeparam name="T">Class instance type, which implements the <see cref="IYAMLSerializable"/> interface.</typeparam>
     /// <param name="key">Key of the object inside the <see cref="YAMLObject"/>.</param>
