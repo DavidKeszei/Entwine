@@ -1,6 +1,17 @@
 # YAMLyzer ![C#](https://img.shields.io/badge/c%23-%23239120.svg?style=for-the-badge&logo=csharp&logoColor=white) ![.Net](https://img.shields.io/badge/.NET-5C2D91?style=for-the-badge&logo=.net&logoColor=white) ![Visual Studio](https://img.shields.io/badge/Visual%20Studio-5C2D91.svg?style=for-the-badge&logo=visual-studio&logoColor=white) ![YAML](https://img.shields.io/badge/yaml-%23ffffff.svg?style=for-the-badge&logo=yaml&logoColor=151515)
 Simple and intuitive YAML serialization for C#/.NET. Get up and running quickly with clean, readable code (with minimal reflection). 
 
+## Why I make this?
+__Firstly: just for fun.__ I love to build things from scratch to test my knowledge about create mostly usable libs/programs like this without any external dependencies (exception from this, the core lib of the language). Second reason is doing this: I want to create a YAML serialization library, which using next topics:
+
+- Create lexical tokens from string/stream.
+- Try to interpreter this to mostly usable primitives & other data structures.
+
+Last reason is I am very curious doing this without using the Reflection API of the C#. (Mostly this is succeeded, the __IS__ keyword the only reflection based API what I am used)
+
+## Used Technology
+- .NET
+
 ## Example Code
 ```cs
 string yaml =
