@@ -48,5 +48,5 @@ public class YAMLValue: IYAMLEntity {
     /// <exception cref="FormatException"/>
     public T Serialize<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(_value, provider);
 
-    public override string ToString() => $"{_key}: {_value}";
+    public override string ToString() => _key == IYAMLEntity.KEYLESS ? $"{_value}" : $"{_key}: {_value}";
 }

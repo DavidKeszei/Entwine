@@ -9,7 +9,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Provides reading mechanism for an <see cref="IYAMLEntity"/>.
 /// </summary>
-public interface IReadableYAMLEntity: IYAMLEntity {
+public interface IReadableYAMLEntity: IYAMLEntity, IEnumerable<IYAMLEntity> {
 
     /// <summary>
     /// Read a(n) <typeparamref name="T"/> entry from the current <see cref="IReadableYAMLEntity"/> instance.

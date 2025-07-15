@@ -61,8 +61,8 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
 
         IYAMLEntity? entity = _collection[index];
 
-        if (route.Length > 1 && entity is IReadableYAMLEntity @object)
-            entity = @object.Read<T>(route[1..]);
+        if (route.Length > 1 && entity is IReadableYAMLEntity)
+            entity = ((IReadableYAMLEntity)entity).Read<T>(route[1..]);
 
         if (entity == null || !(entity is T)) return default!;
         return Unsafe.As<IYAMLEntity, T>(ref entity);

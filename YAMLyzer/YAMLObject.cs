@@ -14,6 +14,8 @@ namespace YAMLyzer;
 /// Represent a YAML object from any source.
 /// </summary>
 public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
+    internal const string ROOT_OBJECT_INDENTIFIER = "<root>";
+
     private Dictionary<string, IYAMLEntity> _entities = null!;
     private string _key = "<root>";
 
@@ -69,8 +71,8 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
     public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
         IYAMLEntity entity = _entities[route[0]];
 
-        if(entity is IReadableYAMLEntity @object && route.Length > 1)
-            entity = @object.Read<IYAMLEntity>(route: route[1..])!;
+        if(entity is IReadableYAMLEntity && route.Length > 1)
+            entity = ((IReadableYAMLEntity)entity).Read<IYAMLEntity>(route: route[1..])!;
 
         if (entity == null || !(entity is T))
             return default!;
@@ -118,10 +120,17 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
         _entities.Clear();
     }
 
+    public IEnumerator<IYAMLEntity> GetEnumerator() {
+        foreach(string key in _entities.Keys)
+            yield return _entities[key];
+    }
+
+    #region INTERNAL_FUNCTIONS
+
     internal bool Add(string key, IYAMLEntity entity) => _entities.TryAdd(key, entity);
 
     /// <summary>
-    /// Create a deep copy from the current instance.
+    /// Create deep copy from the current instance.
     /// </summary>
     /// <returns>Return a <see cref="YAMLObject"/> instance.</returns>
     internal YAMLObject AsCopy() {
@@ -131,4 +140,9 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
         _isCopied = true;
         return copy;
     }
+
+    IEnumerator IEnumerable.GetEnumerator()
+        => GetEnumerator();
+
+    #endregion
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
@@ -16,6 +17,13 @@ namespace YAMLyzer;
 /// </summary>
 public static class YAMLSerializer {
 
+    /// <summary>
+    /// Deserialize a YAML <see cref="string"/> to an object representation.
+    /// </summary>
+    /// <typeparam name="T">Implementer class/struct of the <see cref="IYAMLSerializable"/>.</typeparam>
+    /// <param name="yaml">The YAML <see cref="string"/>.</param>
+    /// <returns>Return a(n) <typeparamref name="T"/> instance, if this is successful. Otherwise return <see langword="null"/>.</returns>
+    /// <exception cref="FormatException"/>
     public static async Task<T?> Deserialize<T>(string yaml) where T: IYAMLSerializable, new() {
         IReadableYAMLEntity obj = await Deserialize(yaml);
         T deserialized = new T();
@@ -55,7 +63,7 @@ public static class YAMLSerializer {
                     }
 
                     if (tokens[count - 1].Type == YamlTokenType.Delimiter) {
-                        int objEnd = FirstOrderOf(tokens[count].Indentation, tokens[(count + 1)..]);
+                        int objEnd = FirstIndentationOf(tokens[count].Indentation, tokens[(count + 1)..]);
 
                         if (objEnd != -1) {
                             obj.Add(id, RecursivelyDeserialize(id, tokens[(count + 1)..(count + 1 + objEnd)]));
@@ -95,7 +103,7 @@ public static class YAMLSerializer {
                     break;
 
                 case YamlTokenType.MultilineStringIndicator:
-                    int mStrEnd = FirstOrderOf(tokens[count].Indentation, tokens[(count + 2)..]);
+                    int mStrEnd = FirstIndentationOf(tokens[count].Indentation, tokens[(count + 2)..]);
 
                     if (mStrEnd != -1) {
                         obj.Write(id, CreateMultilineString(tokens[(count + 2)..(count + 2 + mStrEnd)], saveNewlines: tokens[count].Value[0] != '|'));
@@ -121,6 +129,22 @@ public static class YAMLSerializer {
 
         return obj;
     }
+
+    /// <summary>
+    /// Serialize an <see cref="IYAMLEntity"/> to YAML representation.
+    /// </summary>
+    /// <param name="entity">The entity, which holds the data.</param>
+    public static Task<string> Serialize(IYAMLEntity entity) {
+        StringBuilder builder = new StringBuilder();
+        int indentation = 0;
+
+        if(entity is IReadableYAMLEntity) RecursivelySerialize((IReadableYAMLEntity)entity, builder, indentation);
+        else return Task.FromResult<string>(result: $"{entity}");
+
+        return Task.FromResult<string>(result: builder.ToString());
+    }
+
+    #region PRIVATE_FUNCTIONS
 
     private static IYAMLEntity RecursivelyDeserialize(string key, ReadOnlySpan<YamlToken> tokens) {
         if(tokens.Length == 0)
@@ -165,7 +189,7 @@ public static class YAMLSerializer {
                     }
 
                     if (tokens[index - 1].Type == YamlTokenType.Delimiter) {
-                        int objEnd = FirstOrderOf(tokens[index].Indentation, tokens[(index + 1)..]);
+                        int objEnd = FirstIndentationOf(tokens[index].Indentation, tokens[(index + 1)..]);
                         isCollectionObjectEntry = true;
 
                         if (objEnd != -1) {
@@ -176,6 +200,7 @@ public static class YAMLSerializer {
                             obj.Add(id, RecursivelyDeserialize(id, tokens[(index + 1)..]));
                             index = tokens.Length;
                         }
+
                         id = null!;
                         break;
                     }
@@ -194,6 +219,8 @@ public static class YAMLSerializer {
 
                     index += tokens[index + 1].Type == YamlTokenType.Value ? 1 : 2;
                     isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
+
+                    obj.Key = IYAMLEntity.KEYLESS;
                     break;
                 case YamlTokenType.InlineArrayIndicator:
                     int arrayEnd = IndexOf<YamlToken, char>(searchItem: ']', prop: static (x) => x.Value[0], tokens[index..]);
@@ -219,7 +246,7 @@ public static class YAMLSerializer {
                     ++index;
                     break;
                 case YamlTokenType.MultilineStringIndicator:
-                    int mStrEnd = FirstOrderOf(tokens[index].Indentation, tokens[(index + 2)..]);
+                    int mStrEnd = FirstIndentationOf(tokens[index].Indentation, tokens[(index + 2)..]);
                     YAMLValue multilineString = null!;
 
                     if (mStrEnd != -1) {
@@ -282,7 +309,7 @@ public static class YAMLSerializer {
         return builder.ToString();
     }
 
-    private static int FirstOrderOf(int order, ReadOnlySpan<YamlToken> tokens) {
+    private static int FirstIndentationOf(int order, ReadOnlySpan<YamlToken> tokens) {
         for (int i = 0; i < tokens.Length; ++i) {
             if (tokens[i].Indentation == order)
                 return i;
@@ -307,4 +334,43 @@ public static class YAMLSerializer {
         if (vIndicator != -1) return vIndicator > 3;
         return tokens.Length > 5;
     }
+
+    private static void RecursivelySerialize(IReadableYAMLEntity source, StringBuilder builder, int indentation) {
+        bool isCollection = source is YAMLCollection;
+        bool isCollectionObjectEntry = source.Key == IYAMLEntity.KEYLESS;
+
+        if(source.Key != YAMLObject.ROOT_OBJECT_INDENTIFIER && !isCollectionObjectEntry) {
+            builder.Append($"{source.Key}:\n");
+            AddIndentation(builder, indentation * 2);
+        }
+
+        foreach(IYAMLEntity entity in source) {
+            if(entity is IReadableYAMLEntity) {
+                if(isCollection)
+                    builder.Append("- ");
+
+                RecursivelySerialize((IReadableYAMLEntity)entity, builder, ++indentation);
+                --indentation;
+                continue;
+            }
+
+            if(isCollection) {
+                builder.Append(value: $"- {entity}\n");
+                isCollectionObjectEntry = false;
+
+                AddIndentation(builder, indentation * 2);
+                continue;
+            }
+
+            builder.Append(value: $"{entity}\n");
+            AddIndentation(builder, indentation * 2);
+        }
+    }
+
+    private static void AddIndentation(StringBuilder builder, int indentation) {
+        for(int i = 0; i < indentation; ++i)
+            builder.Append(value: ' ');
+    }
+
+    #endregion
 }
