@@ -9,7 +9,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Provides modify mechanism for an <see cref="IYAMLEntity"/>.
 /// </summary>
-public interface IWriteableYAMLEntity: IYAMLEntity {
+public interface IWriteableYAMLEntity: IYAMLEntity, IEnumerable<IYAMLEntity> {
 
     /// <summary>
     /// Write primitive value to the current <see cref="YAMLObject"/> instance.

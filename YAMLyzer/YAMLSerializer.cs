@@ -136,10 +136,14 @@ public static class YAMLSerializer {
     /// <param name="entity">The entity, which holds the data.</param>
     public static Task<string> Serialize(IYAMLEntity entity) {
         StringBuilder builder = new StringBuilder();
-        int indentation = 0;
 
-        if(entity is IReadableYAMLEntity) RecursivelySerialize((IReadableYAMLEntity)entity, builder, indentation);
-        else return Task.FromResult<string>(result: $"{entity}");
+        if (entity is not IReadableYAMLEntity)
+            return Task.FromResult<string>(result: $"{entity}");
+
+        foreach (IYAMLEntity prop in (IReadableYAMLEntity)entity) {
+            if (prop is IReadableYAMLEntity) RecursivelySerialize((IReadableYAMLEntity)prop, builder, indentation: 0, isCollection: false);
+            else builder.AppendLine($"{prop}");
+        }
 
         return Task.FromResult<string>(result: builder.ToString());
     }
@@ -219,8 +223,6 @@ public static class YAMLSerializer {
 
                     index += tokens[index + 1].Type == YamlTokenType.Value ? 1 : 2;
                     isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
-
-                    obj.Key = IYAMLEntity.KEYLESS;
                     break;
                 case YamlTokenType.InlineArrayIndicator:
                     int arrayEnd = IndexOf<YamlToken, char>(searchItem: ']', prop: static (x) => x.Value[0], tokens[index..]);
@@ -277,8 +279,10 @@ public static class YAMLSerializer {
         }
 
         if (isCollection) {
-            if (!obj.IsEmpty) 
+            if (!obj.IsEmpty) {
+                if(obj.Key == collection.Key) obj.Key = IYAMLEntity.KEYLESS;
                 collection.InternalCollection.Add(item: obj.AsCopy());
+            }
 
             ObjectPool<YAMLObject>.Shared.Return(@object: obj);
             YAMLCollection collectionResult = collection.AsCopy();
@@ -295,7 +299,7 @@ public static class YAMLSerializer {
     }
 
     private static string CreateMultilineString(ReadOnlySpan<YamlToken> tokens, bool saveNewlines = false) {
-        StringBuilder builder = new StringBuilder(capacity: 128);
+        StringBuilder builder = new StringBuilder(capacity: 32);
 
         foreach (YamlToken token in tokens) {
             if (!saveNewlines && token.Type == YamlTokenType.NewLine) {
@@ -319,9 +323,7 @@ public static class YAMLSerializer {
     }
 
     private static int IndexOf<T, U>(U searchItem, Func<T, U> prop, ReadOnlySpan<T> collection) where U: IEquatable<U> {
-
         for (int i = 0; i < collection.Length; ++i) {
-
             if (prop(collection[i]).Equals(other: searchItem))
                 return i;
         }
@@ -330,46 +332,33 @@ public static class YAMLSerializer {
     }
 
     private static bool IsCollectionObjectEntry(ReadOnlySpan<YamlToken> tokens) {
-        int vIndicator = IndexOf<YamlToken, char>(searchItem: '-', prop: static (x) => x.Value[0], tokens);
+        int vIndicator = IndexOf<YamlToken, char>(searchItem: '-', prop: static(x) => x.Value[0], tokens);
         if (vIndicator != -1) return vIndicator > 3;
         return tokens.Length > 5;
     }
 
-    private static void RecursivelySerialize(IReadableYAMLEntity source, StringBuilder builder, int indentation) {
-        bool isCollection = source is YAMLCollection;
-        bool isCollectionObjectEntry = source.Key == IYAMLEntity.KEYLESS;
+    private static void RecursivelySerialize(IReadableYAMLEntity parent, StringBuilder builder, int indentation, bool isCollection) {
+        if (isCollection) builder.Append("- ");
+        if (parent.Key != IYAMLEntity.KEYLESS) builder.Append($"{parent.Key}:\n");
 
-        if(source.Key != YAMLObject.ROOT_OBJECT_INDENTIFIER && !isCollectionObjectEntry) {
-            builder.Append($"{source.Key}:\n");
-            AddIndentation(builder, indentation * 2);
-        }
+        foreach (IYAMLEntity entity in parent) {
 
-        foreach(IYAMLEntity entity in source) {
-            if(entity is IReadableYAMLEntity) {
-                if(isCollection)
-                    builder.Append("- ");
-
-                RecursivelySerialize((IReadableYAMLEntity)entity, builder, ++indentation);
-                --indentation;
+            if (entity is IReadableYAMLEntity obj) {
+                if (builder[^2] != '-') AppendIndentation(builder, indentation + 1);
+                RecursivelySerialize(obj, builder, indentation + 1 + (isCollection ? 1 : 0), parent.Type == YAMLType.Array);
                 continue;
             }
 
-            if(isCollection) {
-                builder.Append(value: $"- {entity}\n");
-                isCollectionObjectEntry = false;
-
-                AddIndentation(builder, indentation * 2);
-                continue;
-            }
-
-            builder.Append(value: $"{entity}\n");
-            AddIndentation(builder, indentation * 2);
+            if(builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
+            builder.Append($"{(parent.Type == YAMLType.Array ? "- " : "")}{entity}\n");
         }
     }
 
-    private static void AddIndentation(StringBuilder builder, int indentation) {
-        for(int i = 0; i < indentation; ++i)
-            builder.Append(value: ' ');
+    private static void AppendIndentation(StringBuilder builder, int count) {
+        if (count == 0) return;
+
+        for (int i = 0; i < count; ++i)
+            builder.Append(' ');
     }
 
     #endregion

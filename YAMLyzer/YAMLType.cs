@@ -14,7 +14,13 @@ public enum YAMLType: byte {
     /// Unknow type. This not presented the final YAML serialization.
     /// </summary>
     None,
+    /// <summary>
+    /// Represents an object inside the YAML source.
+    /// </summary>
     Object,
     Array,
+    /// <summary>
+    /// Smallest unit in a YAML source.
+    /// </summary>
     Primitive
 }
