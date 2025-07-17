@@ -38,4 +38,13 @@ public interface IWriteableYAMLEntity: IYAMLEntity, IEnumerable<IYAMLEntity> {
     /// <param name="value">The object value.</param>
     /// <returns>Return <see langword="true"/>, if the value is can be converted to YAML object. Otherwise return <see langword="false"/>.</returns>
     public bool Write<T>(string key, T value) where T: IYAMLSerializable;
+
+    /// <summary>
+    /// Add a collection of <typeparamref name="T"/> instances.
+    /// </summary>
+    /// <typeparam name="T">Type of the collection.</typeparam>
+    /// <param name="key">Key of the collection.</param>
+    /// <param name="list">The collection itself.</param>
+    /// <returns>Return <see langword="true"/> if the collection is successfully added to the <see cref="IWriteableYAMLEntity"/> instance. Otherwise return <see langword="false"/>.</returns>
+    public bool WriteRange<T>(string key, params ReadOnlySpan<T> list);
 }

@@ -13,7 +13,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent a YAML object from any source.
 /// </summary>
-public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
+public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, IEmptiable {
     internal const string ROOT_OBJECT_INDENTIFIER = "<root>";
 
     private Dictionary<string, IYAMLEntity> _entities = null!;
@@ -103,6 +103,17 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable {
         value.ToYAML(in entity);
 
         return _entities.TryAdd(key, (IYAMLEntity)entity);
+    }
+
+    public bool WriteRange<T>(string key, params ReadOnlySpan<T> list) {
+        IYAMLEntity[] array = new IYAMLEntity[list.Length];
+
+        for(int i = 0; i < array.Length; ++i) {
+            if(list[i] != null)
+                array[i] = new YAMLValue(key: IYAMLEntity.KEYLESS, $"{list[i]}");
+        }
+
+        return _entities.TryAdd(key, new YAMLCollection(key, array));
     }
 
     /// <summary>

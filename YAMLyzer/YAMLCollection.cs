@@ -13,7 +13,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent a collection inside a YAML document.
 /// </summary>
-public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAMLEntity {
+public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAMLEntity, IEmptiable {
     private readonly List<IYAMLEntity> _collection = null!;
     private string _key = string.Empty;
 
@@ -37,6 +37,8 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
     /// Key of the collection.
     /// </summary>
     public string Key { get => _key; internal set => _key = value; }
+
+    public bool IsEmpty { get => Length == 0; }
 
     public YAMLType Type { get => _type; }
 

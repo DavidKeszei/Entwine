@@ -21,11 +21,11 @@ public static class YAMLSerializer {
     /// Deserialize a YAML <see cref="string"/> to an object representation.
     /// </summary>
     /// <typeparam name="T">Implementer class/struct of the <see cref="IYAMLSerializable"/>.</typeparam>
-    /// <param name="yaml">The YAML <see cref="string"/>.</param>
+    /// <param name="source">The YAML <see cref="string"/>.</param>
     /// <returns>Return a(n) <typeparamref name="T"/> instance, if this is successful. Otherwise return <see langword="null"/>.</returns>
     /// <exception cref="FormatException"/>
-    public static async Task<T?> Deserialize<T>(string yaml) where T: IYAMLSerializable, new() {
-        IReadableYAMLEntity obj = await Deserialize(yaml);
+    public static async Task<T?> Deserialize<T>(string source) where T: IYAMLSerializable, new() {
+        IReadableYAMLEntity obj = await Deserialize(source);
         T deserialized = new T();
 
         deserialized.FromYAML(in obj);
@@ -35,11 +35,11 @@ public static class YAMLSerializer {
     /// <summary>
     /// Deserialize an YAML <see cref="string"/> to an <see cref="IReadableYAMLEntity"/> representation.
     /// </summary>
-    /// <param name="yaml">The YAML string.</param>
+    /// <param name="source">The YAML string.</param>
     /// <returns>Return an <see cref="IReadableYAMLEntity"/> instance.</returns>
     /// <exception cref="FormatException"/>
-    public static async Task<IReadableYAMLEntity> Deserialize(string yaml) {
-        using YamlLexer lexer = new YamlLexer(yaml);
+    public static async Task<IReadableYAMLEntity> Deserialize(string source) {
+        using YamlLexer lexer = new YamlLexer(source);
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
         YAMLObject obj = new YAMLObject(key: "<root>");
 
@@ -128,6 +128,19 @@ public static class YAMLSerializer {
         }
 
         return obj;
+    }
+
+    /// <summary>
+    /// Serialize a(n) <typeparamref name="T"/> instance to a YAML <see cref="string"/>. 
+    /// </summary>
+    /// <typeparam name="T">Implementer class of the <see cref="IYAMLSerializable"/> interface.</typeparam>
+    /// <param name="source">Source instance of the <typeparamref name="T"/> class.</param>
+    /// <returns>Return a new <see cref="string"/> instance.</returns>
+    public static async Task<string> Serialize<T>(T source) where T: IYAMLSerializable, new() {
+        IWriteableYAMLEntity obj = new YAMLObject(key: "<root>");
+        source.ToYAML(in obj);
+
+        return await Serialize(obj);
     }
 
     /// <summary>
@@ -338,18 +351,26 @@ public static class YAMLSerializer {
     }
 
     private static void RecursivelySerialize(IReadableYAMLEntity parent, StringBuilder builder, int indentation, bool isCollection) {
+        if(parent is IEmptiable empty && empty.IsEmpty) {
+            if(builder.Length > 2 && builder[^2] != '-')
+                AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
+
+            builder.Append($"{parent.Key}: ~");
+            return;
+        }
+
         if (isCollection) builder.Append("- ");
         if (parent.Key != IYAMLEntity.KEYLESS) builder.Append($"{parent.Key}:\n");
 
         foreach (IYAMLEntity entity in parent) {
-
             if (entity is IReadableYAMLEntity obj) {
-                if (builder[^2] != '-') AppendIndentation(builder, indentation + 1);
+                if (builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
+
                 RecursivelySerialize(obj, builder, indentation + 1 + (isCollection ? 1 : 0), parent.Type == YAMLType.Array);
                 continue;
             }
 
-            if(builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
+            if(builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
             builder.Append($"{(parent.Type == YAMLType.Array ? "- " : "")}{entity}\n");
         }
     }
