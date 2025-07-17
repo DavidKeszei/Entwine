@@ -68,6 +68,26 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
         this._entities = new Dictionary<string, IYAMLEntity>();
     }
 
+    /// <summary>
+    /// Clear/Reset the current <see cref="YAMLObject"/> instance. 
+    /// </summary>
+    public void Clear() {
+        if (!_isCopied) {
+            foreach (IYAMLEntity entity in _entities.Values) {
+                if (entity is IClearable)
+                    ((IClearable)entity).Clear();
+            }
+        }
+
+        _key = IYAMLEntity.KEYLESS;
+        _entities.Clear();
+    }
+
+    public IEnumerator<IYAMLEntity> GetEnumerator() {
+        foreach (string key in _entities.Keys)
+            yield return _entities[key];
+    }
+
     public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
         IYAMLEntity entity = _entities[route[0]];
 
@@ -89,6 +109,8 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
         return @result;
     }
 
+    #region WRITE_FUNCTIONS
+
     public bool Write(string key, string value) => _entities.TryAdd(key, new YAMLValue(key, value));
 
     public bool Write<T>(string key, T value, string format = null!, IFormatProvider provider = null!) where T: IFormattable {
@@ -105,36 +127,36 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
         return _entities.TryAdd(key, (IYAMLEntity)entity);
     }
 
-    public bool WriteRange<T>(string key, params ReadOnlySpan<T> list) {
+    //TODO: Make this to one WriteRange method for better readability.
+    public bool WriteRange<T>(string key, ReadOnlySpan<T> list, string format = null!, IFormatProvider provider = null!) where T: IFormattable {
         IYAMLEntity[] array = new IYAMLEntity[list.Length];
 
         for(int i = 0; i < array.Length; ++i) {
-            if(list[i] != null)
-                array[i] = new YAMLValue(key: IYAMLEntity.KEYLESS, $"{list[i]}");
+            if (list[i] == null)
+                continue;
+
+            array[i] = new YAMLValue(IYAMLEntity.KEYLESS, list[i].ToString(format, provider));
         }
 
         return _entities.TryAdd(key, new YAMLCollection(key, array));
     }
 
-    /// <summary>
-    /// Clear/Reset the current <see cref="YAMLObject"/> instance. 
-    /// </summary>
-    public void Clear() {
-        if (!_isCopied) {
-            foreach (IYAMLEntity entity in _entities.Values) {
-                if (entity is IClearable)
-                    ((IClearable)entity).Clear();
-            }
+    public bool WriteRange<T>(string key, params ReadOnlySpan<T> list) where T: IYAMLEntity {
+        IYAMLEntity[] instances = new IYAMLEntity[list.Length];
+
+        if (_entities.ContainsKey(key) || list.Length != instances.Length)
+            return false;
+
+        for(int i = 0; i < list.Length; ++i) {
+            if (list[i] == null) continue;
+            instances[i] = list[i];
         }
 
-        _key = IYAMLEntity.KEYLESS;
-        _entities.Clear();
+        _entities.Add(key, new YAMLCollection(key, instances));
+        return true;
     }
 
-    public IEnumerator<IYAMLEntity> GetEnumerator() {
-        foreach(string key in _entities.Keys)
-            yield return _entities[key];
-    }
+    #endregion
 
     #region INTERNAL_FUNCTIONS
 

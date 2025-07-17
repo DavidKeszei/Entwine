@@ -186,7 +186,8 @@ public static class YAMLSerializer {
             [name][:]["][Entry]["]  => In this scenario must be start with 1 (When not token range is not a vertical collection)
                0   1   2   3    4 
         */
-        int index = isCollection && tokens.Length > 2 && (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
+        int index = isCollection && tokens.Length > 2 && 
+                    (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
 
         /* Indicates the current entry is a object or just a primitive value inside in a collection */
         bool isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);

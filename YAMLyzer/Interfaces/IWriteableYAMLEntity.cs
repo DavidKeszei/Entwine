@@ -46,5 +46,14 @@ public interface IWriteableYAMLEntity: IYAMLEntity, IEnumerable<IYAMLEntity> {
     /// <param name="key">Key of the collection.</param>
     /// <param name="list">The collection itself.</param>
     /// <returns>Return <see langword="true"/> if the collection is successfully added to the <see cref="IWriteableYAMLEntity"/> instance. Otherwise return <see langword="false"/>.</returns>
-    public bool WriteRange<T>(string key, params ReadOnlySpan<T> list);
+    public bool WriteRange<T>(string key, ReadOnlySpan<T> list, string format = null!, IFormatProvider provider = null!) where T: IFormattable;
+
+    /// <summary>
+    /// Add a collection of <typeparamref name="T"/> instances.
+    /// </summary>
+    /// <typeparam name="T">Implementer type of the <see cref="IYAMLSerializable"/> interface.</typeparam>
+    /// <param name="key">Key of the collection.</param>
+    /// <param name="list">Collection of the <typeparamref name="T"/> instances.</param>
+    /// <returns>Return <see langword="true"/> if the collection is successfully added to the <see cref="IWriteableYAMLEntity"/> instance. Otherwise return <see langword="false"/>.</returns>
+    public bool WriteRange<T>(string key, params ReadOnlySpan<T> list) where T: IYAMLEntity;
 }
