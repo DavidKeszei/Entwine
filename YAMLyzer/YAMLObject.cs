@@ -13,10 +13,10 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent a YAML object from any source.
 /// </summary>
-public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, IEmptiable {
+public class YAMLObject: IWriteableEntity, IReadableEntity, IClearable, IEmptiable {
     internal const string ROOT_OBJECT_INDENTIFIER = "<root>";
 
-    private Dictionary<string, IYAMLEntity> _entities = null!;
+    private Dictionary<string, IEntity> _entities = null!;
     private string _key = "<root>";
 
     private bool _isCopied = false;
@@ -38,12 +38,12 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
     /// Get a property based on the <paramref name="keys"/>.
     /// </summary>
     /// <param name="keys">Route/Keys of the property in the object.</param>
-    /// <returns>Return a instance, which implement the <see cref="IYAMLEntity"/> interface.</returns>
+    /// <returns>Return a instance, which implement the <see cref="IEntity"/> interface.</returns>
     /// <exception cref="KeyNotFoundException"/>
     /// <exception cref="FieldAccessException"/>
-    public IYAMLEntity this[string[] keys] { 
+    public IEntity this[string[] keys] { 
         get {
-            IYAMLEntity? entity = _entities[keys[0]];
+            IEntity? entity = _entities[keys[0]];
             YAMLObject obj = null!;
 
             for (int i = 1; i < keys.Length; ++i) {
@@ -60,12 +60,12 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
 
     public YAMLObject(string key) {
         this._key = key;
-        this._entities = new Dictionary<string, IYAMLEntity>(capacity: 16);
+        this._entities = new Dictionary<string, IEntity>(capacity: 16);
     }
 
     public YAMLObject() {
-        this._key = IYAMLEntity.KEYLESS;
-        this._entities = new Dictionary<string, IYAMLEntity>();
+        this._key = IEntity.KEYLESS;
+        this._entities = new Dictionary<string, IEntity>();
     }
 
     /// <summary>
@@ -73,31 +73,31 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
     /// </summary>
     public void Clear() {
         if (!_isCopied) {
-            foreach (IYAMLEntity entity in _entities.Values) {
+            foreach (IEntity entity in _entities.Values) {
                 if (entity is IClearable)
                     ((IClearable)entity).Clear();
             }
         }
 
-        _key = IYAMLEntity.KEYLESS;
+        _key = IEntity.KEYLESS;
         _entities.Clear();
     }
 
-    public IEnumerator<IYAMLEntity> GetEnumerator() {
+    public IEnumerator<IEntity> GetEnumerator() {
         foreach (string key in _entities.Keys)
             yield return _entities[key];
     }
 
-    public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
-        IYAMLEntity entity = _entities[route[0]];
+    public T Read<T>(ReadOnlySpan<string> route) where T: IEntity {
+        IEntity entity = _entities[route[0]];
 
-        if(entity is IReadableYAMLEntity && route.Length > 1)
-            entity = ((IReadableYAMLEntity)entity).Read<IYAMLEntity>(route: route[1..])!;
+        if(entity is IReadableEntity && route.Length > 1)
+            entity = ((IReadableEntity)entity).Read<IEntity>(route: route[1..])!;
 
         if (entity == null || !(entity is T))
             return default!;
 
-        return Unsafe.As<IYAMLEntity, T>(ref entity!);
+        return Unsafe.As<IEntity, T>(ref entity!);
     }
 
     public T? Read<T>(ReadOnlySpan<string> route, T valueOnError = default!, IFormatProvider provider = null!) where T: IParsable<T> {
@@ -109,58 +109,35 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
         return @result;
     }
 
-    #region WRITE_FUNCTIONS
+    /// <summary>
+    /// Write a(n) <typeparamref name="T"/> instance to the current <see cref="YAMLObject"/> instance.
+    /// </summary>
+    /// <typeparam name="T">Type of the value. This argument must be one of these types: <see cref="IFormattable"/>, <see cref="IEntity"/>, <see cref="ISerializable"/>, <see cref="string"/> or any <b>primitive</b> type.</typeparam>
+    /// <param name="route">Target of the write process in the object. If this is empty, then the write process target is the current instance.</param>
+    /// <param name="key">Key of the <paramref name="value"/>.</param>
+    /// <param name="value">The value itself.</param>
+    /// <param name="format">Format of the <paramref name="value"/>. This is ignored, when the <typeparamref name="T"/> not implement the <see cref="IFormattable"/> interface.</param>
+    /// <param name="provider">Current environment of the runtime. This is ignored, when the <typeparamref name="T"/> not implement the <see cref="IFormattable"/> interface.</param>
+    /// <exception cref="ArgumentException"/>
+    /// <exception cref="KeyNotFoundException"/>
+    /// <exception cref="IndexOutOfRangeException"/>
+    public void Write<T>(ReadOnlySpan<string> route, string key, T value, string format = null!, IFormatProvider provider = null!) {
+        IWriteableEntity writeable = route.Length == 0 ? this : this.Read<IWriteableEntity>(route);
 
-    public bool Write(string key, string value) => _entities.TryAdd(key, new YAMLValue(key, value));
+        IEntity entity = value switch {
+            IEntity => Unsafe.As<T, IEntity>(ref value),
 
-    public bool Write<T>(string key, T value, string format = null!, IFormatProvider provider = null!) where T: IFormattable {
-        provider ??= CultureInfo.CurrentCulture;
+            ISerializable => CreateEntity(key, serializable: Unsafe.As<T, ISerializable>(ref value)),
+            IFormattable => new YAMLValue(key, ((IFormattable)value).ToString(format, provider)),
 
-        IYAMLEntity entity = new YAMLValue(key, value.ToString(format, provider));
-        return _entities.TryAdd(key, entity);
+            string => new YAMLValue(key, value: Unsafe.As<T, string>(ref value)),
+            bool => new YAMLValue(key, value: $"{Unsafe.As<T, bool>(ref value)}"),
+
+            _ => throw new ArgumentException(message: "The T generic parameter is not valid type.")
+        };
+
+        ((YAMLObject)writeable)._entities.Add(key, entity);
     }
-
-    public bool Write<T>(string key, T value) where T: IYAMLSerializable {
-        IWriteableYAMLEntity entity = (IWriteableYAMLEntity)new YAMLObject(key);
-        value.ToYAML(in entity);
-
-        return _entities.TryAdd(key, (IYAMLEntity)entity);
-    }
-
-    //TODO: Make this to one WriteRange method for better readability.
-    public bool WriteRange<T>(string key, ReadOnlySpan<T> list, string format = null!, IFormatProvider provider = null!) where T: IFormattable {
-        IYAMLEntity[] array = new IYAMLEntity[list.Length];
-
-        for(int i = 0; i < array.Length; ++i) {
-            if (list[i] == null)
-                continue;
-
-            array[i] = new YAMLValue(IYAMLEntity.KEYLESS, list[i].ToString(format, provider));
-        }
-
-        return _entities.TryAdd(key, new YAMLCollection(key, array));
-    }
-
-    public bool WriteRange<T>(string key, params ReadOnlySpan<T> list) where T: IYAMLEntity {
-        IYAMLEntity[] instances = new IYAMLEntity[list.Length];
-
-        if (_entities.ContainsKey(key) || list.Length != instances.Length)
-            return false;
-
-        for(int i = 0; i < list.Length; ++i) {
-            if (list[i] == null) continue;
-            instances[i] = list[i];
-        }
-
-        _entities.Add(key, new YAMLCollection(key, instances));
-        return true;
-    }
-
-    #endregion
-
-    #region INTERNAL_FUNCTIONS
-
-    internal bool Add(string key, IYAMLEntity entity) => _entities.TryAdd(key, entity);
 
     /// <summary>
     /// Create deep copy from the current instance.
@@ -168,7 +145,7 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
     /// <returns>Return a <see cref="YAMLObject"/> instance.</returns>
     internal YAMLObject AsCopy() {
         YAMLObject copy = new YAMLObject(key: _key[0..]);
-        copy._entities = new Dictionary<string, IYAMLEntity>(collection: _entities);
+        copy._entities = new Dictionary<string, IEntity>(collection: _entities);
 
         _isCopied = true;
         return copy;
@@ -177,5 +154,10 @@ public class YAMLObject: IWriteableYAMLEntity, IReadableYAMLEntity, IClearable, 
     IEnumerator IEnumerable.GetEnumerator()
         => GetEnumerator();
 
-    #endregion
+    private IEntity CreateEntity(string key, ISerializable serializable) {
+        IWriteableEntity entity = new YAMLObject(key);
+        serializable.ToYAML(in entity);
+
+        return entity;
+    }
 }

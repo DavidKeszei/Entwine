@@ -10,7 +10,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent an abstract representation of a YAML object/value.
 /// </summary>
-public interface IYAMLEntity {
+public interface IEntity {
 
     /// <summary>
     /// The keyless constant for <see cref="YAMLObject"/>.
