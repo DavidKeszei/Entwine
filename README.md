@@ -17,6 +17,7 @@ Last reason is I am very curious doing this without using the Reflection API of 
 
 ## Example Code
 ```cs
+/* Test YAML string of the deserialization. */
 string yaml =
     """
     # This is incorrect for a number. If you specify a custom default value, then you get that in this case!
@@ -26,7 +27,7 @@ string yaml =
 
         # Implicit object declaration in a vertical collection for an item.
         - name: PowerToys
-          publisher: Microsoft5
+          publisher: Microsoft
           version: [0.92]
           desc: |
             Provides ultimate help in your .NET development pipeline!
@@ -39,8 +40,13 @@ string yaml =
             desc: ~
     """;
 
-IReadableYAMLEntity @object = await YAMLSerializer.Deserialize(yaml);
+/* Deserialize the YAML string to IReadableEntity instance. */
+IReadableEntity @object = await YAMLSerializer.Deserialize(yaml);
 
-int version = @object.Read<int>(route: [ "version" ], valueOnError: -1)!;
+/* Read from the root object. (Version is fail to -1, but the date is parsed correctly) */
+int version = @object.Read<int>(route: ["version"], valueOnError: -1)!;
 DateOnly date = @object.Read<DateOnly>(route: ["lastUpdate"], provider: DateTimeFormatInfo.CurrentInfo);
+
+/* Read the first dependency name from the object. (Route: dependencies/0/name) */
+string dependencyName = @object.Read<string>(route: ["dependencies", "0", "name"])!;
 ```
