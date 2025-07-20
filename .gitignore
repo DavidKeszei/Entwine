@@ -366,3 +366,5 @@ FodyWeavers.xsd
 /YamlReader/yamlview.csproj
 /yamlview/yamlview.csproj
 /yamlview/Program.cs
+/yaml/yaml.csproj
+/yaml/Program.cs

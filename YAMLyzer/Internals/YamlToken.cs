@@ -3,7 +3,7 @@
 /// <summary>
 /// Smallest unit of the YAML string by the parser.
 /// </summary>
-public readonly struct YamlToken {
+internal readonly struct YamlToken {
     private readonly string _token = string.Empty;
     private readonly YamlTokenType _type = YamlTokenType.None;
 
@@ -35,7 +35,7 @@ public readonly struct YamlToken {
 /// <summary>
 /// Collection of possible YAML primitives.
 /// </summary>
-public enum YamlTokenType: byte {
+internal enum YamlTokenType: byte {
     /// <summary>
     /// Unknow token type. This automatically rises a error.
     /// </summary>

@@ -13,20 +13,17 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent a collection inside a YAML document.
 /// </summary>
-public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAMLEntity {
-    private readonly List<IYAMLEntity> _collection = null!;
-    private string _key = string.Empty;
-
-    private readonly YAMLType _type = YAMLType.Array;
+public class YAMLCollection: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity> {
+    private readonly List<IEntity> _collection = null!;
     private bool _isCopied = false;
 
     /// <summary>
-    /// Get an <see cref="IYAMLEntity"/> based on the <paramref name="index"/>.
+    /// Get an <see cref="YAMLBase"/> based on the <paramref name="index"/>.
     /// </summary>
-    /// <param name="index">Position of the <see cref="IYAMLEntity"/>.</param>
-    /// <returns>Return an <see cref="IYAMLEntity"/> instance.</returns>
+    /// <param name="index">Position of the <see cref="YAMLBase"/>.</param>
+    /// <returns>Return an <see cref="YAMLBase"/> instance.</returns>
     /// <exception cref="IndexOutOfRangeException"/>
-    public IYAMLEntity this[int index] { get => this._collection[index]; }
+    public IEntity this[int index] { get => this._collection[index]; }
 
     /// <summary>
     /// Length of the collection.
@@ -34,77 +31,59 @@ public class YAMLCollection: IClearable, IEnumerable<IYAMLEntity>, IReadableYAML
     public int Length { get => _collection.Count; }
 
     /// <summary>
-    /// Key of the collection.
+    /// Indicates the current collection is empty.
     /// </summary>
-    public string Key { get => _key; internal set => _key = value; }
-
-    public YAMLType Type { get => _type; }
+    public bool IsEmpty { get => _collection == null || _collection.Count == 0; }
 
     /// <summary>
-    /// [Internal Use] The underlying collection of the current object instance.
+    /// The underlying collection of the current object instance.
     /// </summary>
-    internal List<IYAMLEntity> InternalCollection { get => _collection; } 
+    internal List<IEntity> InternalCollection { get => _collection; } 
 
-    internal YAMLCollection(string key, params IEnumerable<IYAMLEntity> collection) {
-        this._key = key;
-        this._collection = new List<IYAMLEntity>(collection);
-    }
+    public YAMLCollection(string key, params IEnumerable<IEntity> collection): base(key, YAMLType.Collection) 
+        => this._collection = new List<IEntity>(collection);
 
-    public YAMLCollection() {
-        this._key = IYAMLEntity.KEYLESS;
-        this._collection = new List<IYAMLEntity>();
-    }
-
-    public T Read<T>(ReadOnlySpan<string> route) where T: IYAMLEntity {
-        if (!int.TryParse(route[0], out int index))
-            throw new ArgumentException(message: $"The parameter is not a numeric string literal. (Route: {string.Join('-', route!)})");
-
-        IYAMLEntity? entity = _collection[index];
-
-        if (route.Length > 1 && entity is IReadableYAMLEntity @object)
-            entity = @object.Read<T>(route[1..]);
-
-        if (entity == null || !(entity is T)) return default!;
-        return Unsafe.As<IYAMLEntity, T>(ref entity);
-    }
-
-    public T Read<T>(ReadOnlySpan<string> route, T valueOnError = default!, IFormatProvider provider = null!) where T: IParsable<T> {
-        IYAMLEntity readable = null!;
-
-        if(int.TryParse(s: route[0], out int index)) readable = _collection[index];
-        else throw new ArgumentException(message: "The index can't converter to a number value.");
-
-        if(route.Length > 1 && readable is IReadableYAMLEntity @object)
-            readable = @object.Read<IYAMLEntity>(route[1..]);
-
-        if(readable is YAMLValue value && value.Serialize<T>(out T? @result, provider))
-            return @result!;
-
-        return valueOnError;
-    }
+    public YAMLCollection(): base(key: YAMLBase.KEYLESS, type: YAMLType.Collection)
+        => this._collection = new List<IEntity>();
 
     public void Clear() {
         if (!_isCopied) {
-            foreach (IYAMLEntity entity in _collection) {
+            foreach (IEntity entity in _collection) {
                 if (entity is IClearable)
                     ((IClearable)entity).Clear();
             }
         }
 
         _collection.Clear();
-        _key = IYAMLEntity.KEYLESS;
+        Key = YAMLBase.KEYLESS;
     }
 
-    public IEnumerator<IYAMLEntity> GetEnumerator()
-        => this._collection.GetEnumerator();
+    public IEnumerator<IEntity> GetEnumerator() => this._collection.GetEnumerator();
 
     /// <summary>
     /// Create deep copy from the current instance.
     /// </summary>
     /// <returns>Return a <see cref="YAMLCollection"/> instance.</returns>
-    internal YAMLCollection AsCopy() {
+    public YAMLCollection AsCopy() {
         _isCopied = true;
-        return new YAMLCollection(key: this._key, collection: _collection);
+        return new YAMLCollection(key: this.Key, collection: _collection);
+    }
+
+    protected override IEntity Resolve(string key) {
+        if(!int.TryParse(s: key, out int index))
+            throw new ArgumentException(message: $"The collection index is can't be parsed to number. (Value: {key})");
+
+        return _collection[index];
+    }
+
+    protected override void Create(IEntity entity) {
+        int index = -1;
+        if((index = _collection.IndexOf(entity)) != -1) {
+            _collection[index] = entity;
+            return;
+        }
+
+        _collection.Add(item: entity);
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();

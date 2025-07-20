@@ -11,7 +11,7 @@ namespace YAMLyzer;
 /// <summary>
 /// Represent a primitive value in the YAML value.
 /// </summary>
-public class YAMLValue: IYAMLEntity {
+public class YAMLValue: IEntity {
     private string _key = string.Empty;
     private string _value = string.Empty;
 
@@ -19,7 +19,7 @@ public class YAMLValue: IYAMLEntity {
 
     public string Key { get => _key; }
 
-    public YAMLType Type { get => _type; }
+    public YAMLType TypeOf { get => _type; }
 
     internal YAMLValue(string key, string value) {
         this._key = key;
@@ -48,5 +48,11 @@ public class YAMLValue: IYAMLEntity {
     /// <exception cref="FormatException"/>
     public T Serialize<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(_value, provider);
 
-    public override string ToString() => $"{_key}: {_value}";
+    public override string ToString() => _key == YAMLBase.KEYLESS ? $"{_value}" : $"{_key}: {_value}";
+}
+
+public interface IEntity {
+    public string Key { get; }
+
+    public YAMLType TypeOf { get; }
 }

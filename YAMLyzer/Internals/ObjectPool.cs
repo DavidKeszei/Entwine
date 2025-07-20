@@ -7,7 +7,8 @@ using System.Threading.Tasks;
 using YAMLyzer.Interfaces;
 
 namespace YAMLyzer.Internals;
-public class ObjectPool<T> where T: IClearable, new() {
+
+internal class ObjectPool<T> where T: IClearable, new() {
     [ThreadStatic]
     private static ObjectPool<T> _shared = null!;
 

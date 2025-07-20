@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Helper class for create lexical tokens from a YAML string.
+/// Helper class for create lexical tokens from a <see cref="YamlTokenSource"/>.
 /// </summary>
 internal class YamlLexer: IDisposable {
     internal const int MAX_BUFFER_COUNT = 4096;
