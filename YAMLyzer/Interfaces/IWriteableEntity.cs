@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides modify mechanism for an <see cref="IEntity"/>.
+/// Provides modify mechanism for an <see cref="YAMLBase"/>.
 /// </summary>
-public interface IWriteableEntity: IEntity, IEnumerable<IEntity> {
+public interface IWriteableEntity {
 
     /// <summary>
     /// Write a(n) <typeparamref name="T"/> instance to the current <see cref="YAMLObject"/> instance.
     /// </summary>
-    /// <typeparam name="T">Type of the value. This argument must be one of these types: <see cref="IFormattable"/>, <see cref="IEntity"/>, <see cref="ISerializable"/>, <see cref="string"/> or any <b>primitive</b> type.</typeparam>
+    /// <typeparam name="T">Type of the value. This argument must be one of these types: <see cref="IFormattable"/>, <see cref="YAMLBase"/>, <see cref="ISerializable"/>, <see cref="string"/> or any <b>primitive</b> type.</typeparam>
     /// <param name="route">Target of the write process in the object. If this is empty, then write process target is the current instance.</param>
     /// <param name="key">Key of the <paramref name="value"/>.</param>
     /// <param name="value">The value itself.</param>

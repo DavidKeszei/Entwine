@@ -7,14 +7,14 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides reading mechanism for an <see cref="IEntity"/>.
+/// Provides reading mechanism for an <see cref="YAMLBase"/>.
 /// </summary>
-public interface IReadableEntity: IEntity, IEnumerable<IEntity> {
+public interface IReadableEntity {
 
     /// <summary>
     /// Read a(n) <typeparamref name="T"/> entry from the current <see cref="IReadableEntity"/> instance.
     /// </summary>
-    /// <typeparam name="T">Implementer class of the <see cref="IEntity"/> interface.</typeparam>
+    /// <typeparam name="T">Implementer class of the <see cref="YAMLBase"/> interface.</typeparam>
     /// <param name="route">Route to the target of the read process.</param>
     /// <returns>Return a(n) <typeparamref name="T"/> instance.</returns>
     /// <exception cref="ArgumentException"/>
@@ -26,7 +26,7 @@ public interface IReadableEntity: IEntity, IEnumerable<IEntity> {
     /// Read primitive value from the <see cref="IReadableEntity"/> based on the route.
     /// </summary>
     /// <typeparam name="T">Return type of the primitive value.</typeparam>
-    /// <param name="route">Access route/Keys of the value inside the <see cref="IEntity"/>.</param>
+    /// <param name="route">Access route/Keys of the value inside the <see cref="YAMLBase"/>.</param>
     /// <param name="provider">Current culture of the environment.</param>
     /// <returns>Return a(n) <typeparamref name="T"/> instance. If type is incorrect, then return <see langword="null"/>.</returns>
     /// <exception cref="ArgumentException"/>

@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides mechanims for check empty state for an object.
+/// Provides mechanism for check empty state for an object.
 /// </summary>
 public interface IEmptiable {
 

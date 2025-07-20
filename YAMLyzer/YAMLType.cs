@@ -18,7 +18,10 @@ public enum YAMLType: byte {
     /// Represents an object inside the YAML source.
     /// </summary>
     Object,
-    Array,
+    /// <summary>
+    /// Represent group of items in the YAML source.
+    /// </summary>
+    Collection,
     /// <summary>
     /// Smallest unit in a YAML source.
     /// </summary>

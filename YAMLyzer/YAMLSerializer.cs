@@ -16,7 +16,6 @@ namespace YAMLyzer;
 /// Helper class for serialize objects/values to YAML and vice-versa.
 /// </summary>
 public static class YAMLSerializer {
-
     /// <summary>
     /// Deserialize a YAML <see cref="string"/> to an object representation.
     /// </summary>
@@ -41,7 +40,7 @@ public static class YAMLSerializer {
     public static async Task<IReadableEntity> Deserialize(string source) {
         using YamlLexer lexer = new YamlLexer(source);
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
-        YAMLObject obj = new YAMLObject(key: YAMLObject.ROOT_OBJECT_INDENTIFIER);
+        YAMLObject obj = new YAMLObject(key: YAMLBase.ROOT);
 
         int count = 1;
         string id = null!;
@@ -66,11 +65,11 @@ public static class YAMLSerializer {
                         int objEnd = FirstIndentationOf(tokens[count].Indentation, tokens[(count + 1)..]);
 
                         if (objEnd != -1) {
-                            obj.Write<IEntity>(route: [], id, RecursivelyDeserialize(id, tokens[(count + 1)..(count + 1 + objEnd)]));
+                            obj.Write<YAMLBase>(route: [], id, RecursivelyDeserialize(id, tokens[(count + 1)..(count + 1 + objEnd)]));
                             count += objEnd;
                         }
                         else {
-                            obj.Write<IEntity>(route: [], id, RecursivelyDeserialize(id, tokens[(count + 1)..]));
+                            obj.Write<YAMLBase>(route: [], id, RecursivelyDeserialize(id, tokens[(count + 1)..]));
                             count = tokens.Length;
                         }
 
@@ -91,7 +90,7 @@ public static class YAMLSerializer {
                     IEntity[] collectionOf = new YAMLValue[arrayEnd - ++count];
 
                     for (int i = 0; i < collectionOf.Length; ++i)
-                        collectionOf[i] = new YAMLValue(key: IEntity.KEYLESS, tokens[count + i].Value);
+                        collectionOf[i] = new YAMLValue(key: YAMLBase.KEYLESS, tokens[count + i].Value);
 
                     IEntity _collection = (IEntity)new YAMLCollection(id, collectionOf);
                     obj.Write<IEntity>(route: [], id, _collection);
@@ -142,13 +141,13 @@ public static class YAMLSerializer {
     /// <exception cref="IndexOutOfRangeException"/>
     public static async Task<string> Serialize<T>(T source, string customKey = null!) where T: ISerializable, new() {
         YAMLObject obj = new YAMLObject();
-        obj.Write<IEntity>(route: [], key: customKey ?? nameof(T).ToLower(), value: obj);
+        obj.Write<YAMLBase>(route: [], key: customKey ?? nameof(T).ToLower(), value: obj);
 
         return await Serialize(obj);
     }
 
     /// <summary>
-    /// Serialize an <see cref="IEntity"/> to YAML representation.
+    /// Serialize an <see cref="YAMLBase"/> to YAML representation.
     /// </summary>
     /// <param name="entity">The entity, which holds the data.</param>
     public static Task<string> Serialize(IEntity entity) {
@@ -157,8 +156,8 @@ public static class YAMLSerializer {
         if (entity is not IReadableEntity)
             return Task.FromResult<string>(result: $"{entity}");
 
-        foreach (IEntity prop in (IReadableEntity)entity) {
-            if (prop is IReadableEntity) RecursivelySerialize((IReadableEntity)prop, builder, indentation: 0, isCollection: false);
+        foreach (IEntity prop in (IEnumerable<IEntity>)entity) {
+            if (prop is IReadableEntity) RecursivelySerialize(prop, builder, indentation: 0, isCollection: false);
             else builder.AppendLine($"{prop}");
         }
 
@@ -167,7 +166,7 @@ public static class YAMLSerializer {
 
     #region PRIVATE_FUNCTIONS
 
-    private static IEntity RecursivelyDeserialize(string key, ReadOnlySpan<YamlToken> tokens) {
+    private static YAMLBase RecursivelyDeserialize(string key, ReadOnlySpan<YamlToken> tokens) {
         if(tokens.Length == 0)
             throw new FormatException(message: $"If you want to create a collection or an object, then must be specify 1 item, field or value. (Key: {key})");
 
@@ -215,11 +214,11 @@ public static class YAMLSerializer {
                         isCollectionObjectEntry = true;
 
                         if (objEnd != -1) {
-                            obj.Write<IEntity>(route: [], id, RecursivelyDeserialize(id, tokens[(index + 1)..(index + 1 + objEnd)]));
+                            obj.Write<YAMLBase>(route: [], id, RecursivelyDeserialize(id, tokens[(index + 1)..(index + 1 + objEnd)]));
                             index += objEnd;
                         }
                         else {
-                            obj.Write<IEntity>(route: [], id, RecursivelyDeserialize(id, tokens[(index + 1)..]));
+                            obj.Write<YAMLBase>(route: [], id, RecursivelyDeserialize(id, tokens[(index + 1)..]));
                             index = tokens.Length;
                         }
 
@@ -233,7 +232,7 @@ public static class YAMLSerializer {
                     break;
                 case YamlTokenType.VerticalArrayIndicator:
                     if (isCollectionObjectEntry) {
-                        obj.Key = IEntity.KEYLESS;
+                        obj.Key = YAMLBase.KEYLESS;
 
                         collection.InternalCollection.Add(item: obj.AsCopy());
                         obj.Clear();
@@ -253,7 +252,7 @@ public static class YAMLSerializer {
                     IEntity[] collectionOf = new YAMLValue[arrayEnd - ++index];
 
                     for (int i = 0; i < collectionOf.Length; ++i)
-                        collectionOf[i] = new YAMLValue(key: IEntity.KEYLESS, tokens[index + i].Value);
+                        collectionOf[i] = new YAMLValue(key: YAMLBase.KEYLESS, tokens[index + i].Value);
 
                     IEntity _collection = (IEntity)new YAMLCollection(id, collectionOf);
 
@@ -287,8 +286,8 @@ public static class YAMLSerializer {
                     id = null!;
                     break;
                 case YamlTokenType.Value:
-                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? IEntity.KEYLESS, value: tokens[index].Value));
-                    else obj.Write<string>(route: [], id ?? IEntity.KEYLESS, tokens[index].Value);
+                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? YAMLBase.KEYLESS, value: tokens[index].Value));
+                    else obj.Write<string>(route: [], id ?? YAMLBase.KEYLESS, tokens[index].Value);
 
                     id = null!;
                     ++index;
@@ -298,7 +297,7 @@ public static class YAMLSerializer {
 
         if (isCollection) {
             if (!obj.IsEmpty) {
-                if(obj.Key == collection.Key) obj.Key = IEntity.KEYLESS;
+                if(obj.Key == collection.Key) obj.Key = YAMLBase.KEYLESS;
                 collection.InternalCollection.Add(item: obj.AsCopy());
             }
 
@@ -355,28 +354,30 @@ public static class YAMLSerializer {
         return tokens.Length > 5;
     }
 
-    private static void RecursivelySerialize(IReadableEntity parent, StringBuilder builder, int indentation, bool isCollection) {
+    private static void RecursivelySerialize(IEntity parent, StringBuilder builder, int indentation, bool isCollection) {
         if(parent is IEmptiable empty && empty.IsEmpty) {
+
             if(builder.Length > 2 && builder[^2] != '-')
                 AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
 
-            builder.Append($"{parent.Key}: ~");
+            builder.Append($"{(isCollection ? "-" : string.Empty)} {parent.Key}: ~");
             return;
         }
 
         if (isCollection) builder.Append("- ");
-        if (parent.Key != IEntity.KEYLESS) builder.Append($"{parent.Key}:\n");
+        if (parent.Key != YAMLBase.KEYLESS) builder.Append($"{parent.Key}:\n");
 
-        foreach (IEntity entity in parent) {
-            if (entity is IReadableEntity obj) {
+        foreach (IEntity entity in (IEnumerable<IEntity>)parent) {
+
+            if (entity is YAMLBase obj) {
                 if (builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
 
-                RecursivelySerialize(obj, builder, indentation + 1 + (isCollection ? 1 : 0), parent.Type == YAMLType.Array);
+                RecursivelySerialize(obj, builder, indentation + 1 + (isCollection ? 1 : 0), parent.TypeOf == YAMLType.Collection);
                 continue;
             }
 
             if(builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
-            builder.Append($"{(parent.Type == YAMLType.Array ? "- " : "")}{entity}\n");
+            builder.Append($"{(parent.TypeOf == YAMLType.Collection ? "-" : string.Empty)} {entity}\n");
         }
     }
 

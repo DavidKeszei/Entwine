@@ -19,7 +19,7 @@ public class YAMLValue: IEntity {
 
     public string Key { get => _key; }
 
-    public YAMLType Type { get => _type; }
+    public YAMLType TypeOf { get => _type; }
 
     internal YAMLValue(string key, string value) {
         this._key = key;
@@ -48,5 +48,11 @@ public class YAMLValue: IEntity {
     /// <exception cref="FormatException"/>
     public T Serialize<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(_value, provider);
 
-    public override string ToString() => _key == IEntity.KEYLESS ? $"{_value}" : $"{_key}: {_value}";
+    public override string ToString() => _key == YAMLBase.KEYLESS ? $"{_value}" : $"{_key}: {_value}";
+}
+
+public interface IEntity {
+    public string Key { get; }
+
+    public YAMLType TypeOf { get; }
 }
