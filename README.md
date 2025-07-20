@@ -12,6 +12,9 @@ Last reason is I am very curious doing this without using the Reflection API of 
 ## Used Technology
 - .NET
 
+## Requirement
+- NET9 or above
+
 ## Example Code
 ```cs
 string yaml =
