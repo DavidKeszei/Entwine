@@ -25,22 +25,22 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     /// </summary>
     public const string KEYLESS = "<no key>";
 
-    private string _key = string.Empty;
-    private YAMLType _type = YAMLType.None;
+    private string m_key = string.Empty;
+    private YAMLType m_type = YAMLType.None;
 
     /// <summary>
     /// Type of the current <see cref="YAMLBase"/> instance. This property must be overwritten by the child classes.
     /// </summary>
-    public virtual YAMLType TypeOf { get => _type; }
+    public virtual YAMLType TypeOf { get => m_type; }
 
     /// <summary>
     /// Key of the current <see cref="YAMLBase"/> instance.
     /// </summary>
-    public string Key { get => _key; internal set => _key = value; }
+    public string Key { get => m_key; internal set => m_key = value; }
 
     public YAMLBase(string key, YAMLType type) {
-        this._key = key;
-        this._type = type;
+        this.m_key = key;
+        this.m_type = type;
     }
 
     public T? Read<T>(ReadOnlySpan<string> route) where T: IEntity {
@@ -54,20 +54,20 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     }
 
     public T Read<T>(ReadOnlySpan<string> route, T onError = default!, IFormatProvider provider = null!) where T: IParsable<T> {
-        YAMLValue entity = this.Read<YAMLValue>(route)!;
+        YAMLValue? entity = this.Read<YAMLValue>(route);
 
-        if(entity != null && entity.Serialize<T>(out T? result, provider))
+        if(entity != null && entity.Read<T>(out T? result, provider))
             return result!;
 
         return onError;
     }
 
     public List<T> ReadRange<T>(ReadOnlySpan<string> route) where T: IEntity {
-        IEntity entity = route.Length == 0 ? this : Read<IEntity>(route);
+        IEntity entity = route.Length == 0 ? this : Read<IEntity>(route)!;
         List<T> list = new List<T>();
 
         if (entity is not IEnumerable<IEntity>)
-            throw new ArgumentException(message: $"The reached object is not implement IEnumerable<{nameof(IEntity)}>. Maybe try the Read<T> where {nameof(T)}: {nameof(IEntity)} function for it.");
+            throw new ArgumentException(message: $"The reached object is not implement IEnumerable<{nameof(IEntity)}>. Maybe try the Read<T> where {nameof(T)}: {nameof(IEntity)} function instead.");
 
         foreach(IEntity field in (IEnumerable<IEntity>)entity)
             if (field is T cast) list.Add(item: cast);
@@ -79,14 +79,14 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
         List<T> list = new List<T>();
 
         foreach (YAMLValue field in this.ReadRange<YAMLValue>(route))
-            if (field != null && field.Serialize<T>(out T? serialized, provider))
+            if (field != null && field.Read<T>(out T? serialized, provider))
                 list.Add(item: serialized!);
 
         return list;
     }
 
     public void Write<T>(ReadOnlySpan<string> route, string key, T value, string format = null!, IFormatProvider provider = null!) {
-        IEntity target = route.IsEmpty ? this : this.Read<YAMLBase>(route);
+        IEntity target = route.IsEmpty ? this : this.Read<YAMLBase>(route)!;
 
         if (key == null || key == string.Empty)
             key = YAMLBase.KEYLESS;
@@ -107,8 +107,8 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
         if(target is YAMLBase @base) @base.Create(entity: field);
     }
 
-    public void WriteRange<T>(ReadOnlySpan<string> route, List<(string Key, T Value)> list, string format, IFormatProvider provider) {
-        YAMLBase target = route.IsEmpty ? this : Read<YAMLBase>(route);
+    public void WriteRange<T>(ReadOnlySpan<string> route, List<(string Key, T Value)> list, string format = null!, IFormatProvider provider = null!) {
+        YAMLBase target = route.IsEmpty ? this : Read<YAMLBase>(route)!;
 
         foreach((string key, T value) in CollectionsMarshal.AsSpan<(string, T)>(list))
             target.Write<T>(route: [], key, value, format, provider);

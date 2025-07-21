@@ -36,5 +36,5 @@ public interface IWriteableEntity {
     /// <exception cref="ArgumentException"/>
     /// <exception cref="KeyNotFoundException"/>
     /// <exception cref="IndexOutOfRangeException"/>
-    public void WriteRange<T>(ReadOnlySpan<string> route, List<(string Key, T Value)> list, string format, IFormatProvider provider);
+    public void WriteRange<T>(ReadOnlySpan<string> route, List<(string Key, T Value)> list, string format = null!, IFormatProvider provider = null!);
 }

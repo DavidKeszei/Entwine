@@ -16,6 +16,7 @@ namespace YAMLyzer;
 /// Helper class for serialize objects/values to YAML and vice-versa.
 /// </summary>
 public static class YAMLSerializer {
+
     /// <summary>
     /// Deserialize a YAML <see cref="string"/> to an object representation.
     /// </summary>
