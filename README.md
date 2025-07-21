@@ -41,12 +41,19 @@ string yaml =
     """;
 
 /* Deserialize the YAML string to IReadableEntity instance. */
-IReadableEntity @object = await YAMLSerializer.Deserialize(yaml);
+YAMLObject @object = (YAMLObject)await YAMLSerializer.Deserialize(yaml);
 
 /* Read from the root object. (Version is fail to -1, but the date is parsed correctly) */
-int version = @object.Read<int>(route: ["version"], valueOnError: -1)!;
+int version = @object.Read<int>(route: ["version"], onError: -1)!;
 DateOnly date = @object.Read<DateOnly>(route: ["lastUpdate"], provider: DateTimeFormatInfo.CurrentInfo);
 
 /* Read the first dependency name from the object. (Route: dependencies/0/name) */
-string dependencyName = @object.Read<string>(route: ["dependencies", "0", "name"])!;
+@object.Read<string>(route: ["dependencies", "1", "package", "name"]);
+
+/* Overwrite the YAML field directly. */
+@object.Read<YAMLValue>(route: ["dependencies", "1", "package", "desc"])?
+       .Write<string>(value: "This is an overwritten description.");
+
+/* Write into the console the new YAML string. */
+Console.Out.WriteLine(value: await YAMLSerializer.Serialize(entity: @object));
 ```
