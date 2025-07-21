@@ -46,11 +46,13 @@ public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity> 
         }
     }
 
-    public YAMLObject(string key): base(key, type: YAMLType.Object)
-        => this._entities = new Dictionary<string, IEntity>(capacity: 16);
+    public YAMLObject(string key): base(key, type: YAMLType.Object) {
+        this._entities = new Dictionary<string, IEntity>(capacity: 16);
+    }
 
-    public YAMLObject(): base(key: YAMLBase.KEYLESS, type: YAMLType.Object)
-        => this._entities = new Dictionary<string, IEntity>();
+    public YAMLObject(): base(key: YAMLBase.KEYLESS, type: YAMLType.Object) {
+        this._entities = new Dictionary<string, IEntity>();
+    }
 
     public IEnumerator<IEntity> GetEnumerator() {
         foreach (string key in _entities.Keys)
@@ -68,8 +70,8 @@ public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity> 
             }
         }
 
-        Key = YAMLBase.KEYLESS;
         _entities.Clear();
+        Key = YAMLBase.KEYLESS;
     }
 
     /// <summary>
@@ -87,8 +89,8 @@ public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity> 
     protected override IEntity Resolve(string key) => this._entities[key];
 
     protected override void Create(IEntity entity) {
-        if(_entities.TryAdd(key: entity.Key, value: entity))
-            return;
+        if (entity.Key == YAMLBase.KEYLESS) throw new ArgumentException(message: "The entity must be have a key inside the YAMLObject.");
+        if(!_entities.TryAdd(key: entity.Key, value: entity)) throw new ArgumentException(message: "The key must be unique key.");
 
         _entities[entity.Key] = entity;
     }

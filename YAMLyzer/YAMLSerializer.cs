@@ -377,7 +377,7 @@ public static class YAMLSerializer {
             }
 
             if(builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
-            builder.Append($"{(parent.TypeOf == YAMLType.Collection ? "-" : string.Empty)} {entity}\n");
+            builder.Append($"{(parent.TypeOf == YAMLType.Collection ? "- " : string.Empty)}{entity}\n");
         }
     }
 
