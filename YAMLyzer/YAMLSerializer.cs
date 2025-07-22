@@ -118,7 +118,6 @@ public static class YAMLSerializer {
                     break;
                 case YamlTokenType.Value:
                     obj.Write<string>(route: [], id, tokens[count].Value);
-
                     id = null!;
 
                     if (count < tokens.Length - 1) count += tokens[count + 1].Type == YamlTokenType.NewLine ? 3 : 4;

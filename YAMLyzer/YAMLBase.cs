@@ -115,13 +115,13 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     }
 
     /// <summary>
-    /// Resolve an <see cref="IEntity"/> instance independently from the collection type of the child class.
+    /// Resolve an <see cref="IEntity"/> instance independently from the storage of the <see cref="IEntity"/> instances inside the child class.
     /// </summary>
     /// <returns>Return an <see cref="IEntity"/> instance.</returns>
     protected abstract IEntity Resolve(string key);
 
     /// <summary>
-    /// Add <see cref="IEntity"/> instance to the collection.
+    /// Add <see cref="IEntity"/> instance to the storage.
     /// </summary>
     /// <param name="entity">The value itself.</param>
     protected abstract void Create(IEntity entity);
