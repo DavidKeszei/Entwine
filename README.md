@@ -10,7 +10,10 @@ __Firstly: just for fun.__ I love to build things from scratch to test my knowle
 Last reason is I am very curious doing this without using the Reflection API of the C#. (Mostly this is succeeded, the __IS__ keyword the only reflection based API what I am used)
 
 ## Used Technology
-- .NET
+- .NET/C#
+
+## Requirements
+- .NET9 or above
 
 ## Requirement
 - NET9 or above
