@@ -16,6 +16,7 @@ namespace YAMLyzer;
 /// Helper class for serialize objects/values to YAML and vice-versa.
 /// </summary>
 public static class YAMLSerializer {
+
     /// <summary>
     /// Deserialize a YAML <see cref="string"/> to an object representation.
     /// </summary>
@@ -117,7 +118,6 @@ public static class YAMLSerializer {
                     break;
                 case YamlTokenType.Value:
                     obj.Write<string>(route: [], id, tokens[count].Value);
-
                     id = null!;
 
                     if (count < tokens.Length - 1) count += tokens[count + 1].Type == YamlTokenType.NewLine ? 3 : 4;
@@ -341,7 +341,7 @@ public static class YAMLSerializer {
 
     private static int IndexOf<T, U>(U searchItem, Func<T, U> prop, ReadOnlySpan<T> collection) where U: IEquatable<U> {
         for (int i = 0; i < collection.Length; ++i) {
-            if (prop(collection[i]).Equals(other: searchItem))
+            if (((collection[i] is YamlToken token) && token.Value != string.Empty) && prop(collection[i]).Equals(other: searchItem))
                 return i;
         }
 
@@ -377,7 +377,7 @@ public static class YAMLSerializer {
             }
 
             if(builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
-            builder.Append($"{(parent.TypeOf == YAMLType.Collection ? "-" : string.Empty)} {entity}\n");
+            builder.Append($"{(parent.TypeOf == YAMLType.Collection ? "- " : string.Empty)}{entity}\n");
         }
     }
 

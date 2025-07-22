@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace YAMLyzer;
 
 /// <summary>
-/// Provides reading mechanism for an <see cref="YAMLBase"/>.
+/// Provides reading mechanism for an <see cref="YAMLBase"/> instance.
 /// </summary>
 public interface IReadableEntity {
 
@@ -20,7 +20,7 @@ public interface IReadableEntity {
     /// <exception cref="ArgumentException"/>
     /// <exception cref="IndexOutOfRangeException"/>
     /// <exception cref="ArgumentOutOfRangeException"/>
-    public T Read<T>(ReadOnlySpan<string> route) where T: IEntity;
+    public T? Read<T>(ReadOnlySpan<string> route) where T: IEntity;
 
     /// <summary>
     /// Read primitive value from the <see cref="IReadableEntity"/> based on the route.
@@ -32,5 +32,27 @@ public interface IReadableEntity {
     /// <exception cref="ArgumentException"/>
     /// <exception cref="IndexOutOfRangeException"/>
     /// <exception cref="ArgumentOutOfRangeException"/>
-    public T? Read<T>(ReadOnlySpan<string> route, T valueOnError = default!, IFormatProvider provider = null!) where T: IParsable<T>;
+    public T Read<T>(ReadOnlySpan<string> route, T onError = default!, IFormatProvider provider = null!) where T: IParsable<T>;
+
+    /// <summary>
+    /// Read a list of <typeparamref name="T"/> instances from a collection inside the current object.
+    /// </summary>
+    /// <typeparam name="T">Type of one instance.</typeparam>
+    /// <param name="route">Route of the collection inside the current instance. If this is empty, then collection is the object itself.</param>
+    /// <returns>Return a list of <typeparamref name="T"/> instances.</returns>
+    /// <exception cref="ArgumentException"/>
+    /// <exception cref="IndexOutOfRangeException"/>
+    /// <exception cref="ArgumentOutOfRangeException"/>
+    public List<T> ReadRange<T>(ReadOnlySpan<string> route) where T: IEntity;
+
+    /// <summary>
+    /// Read a list of <typeparamref name="T"/> instances from a collection inside the current object.
+    /// </summary>
+    /// <typeparam name="T">Type of one instance.</typeparam>
+    /// <param name="route">Route of the collection inside the current instance. If this is empty, then collection is the object itself.</param>
+    /// <returns>Return a list of <typeparamref name="T"/> instances.</returns>
+    /// <exception cref="ArgumentException"/>
+    /// <exception cref="IndexOutOfRangeException"/>
+    /// <exception cref="ArgumentOutOfRangeException"/>
+    public List<T> ReadRange<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T>;
 }

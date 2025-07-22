@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Frozen;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -22,56 +25,71 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     /// </summary>
     public const string KEYLESS = "<no key>";
 
-    private string _key = string.Empty;
-    private YAMLType _type = YAMLType.None;
+    private string m_key = string.Empty;
+    private YAMLType m_type = YAMLType.None;
 
     /// <summary>
     /// Type of the current <see cref="YAMLBase"/> instance. This property must be overwritten by the child classes.
     /// </summary>
-    public virtual YAMLType TypeOf { get => _type; }
+    public virtual YAMLType TypeOf { get => m_type; }
 
     /// <summary>
     /// Key of the current <see cref="YAMLBase"/> instance.
     /// </summary>
-    public string Key { get => _key; internal set => _key = value; }
+    public string Key { get => m_key; internal set => m_key = value; }
 
     public YAMLBase(string key, YAMLType type) {
-        this._key = key;
-        this._type = type;
+        this.m_key = key;
+        this.m_type = type;
     }
 
-    public T Read<T>(ReadOnlySpan<string> route) where T: IEntity {
+    public T? Read<T>(ReadOnlySpan<string> route) where T: IEntity {
         IEntity entity = Resolve(key: route[0]);
 
-        if(route.Length > 1 && entity is IReadableEntity readable) entity = readable.Read<T>(route[1..]);
+        if(route.Length > 1 && entity is IReadableEntity readable) entity = readable.Read<T>(route[1..])!;
         else if(route.Length > 1 && entity is not IReadableEntity) throw new AccessViolationException(message: "The route is too long. (Are you sure you don't go too far?)");
 
+        if (entity is not T) entity = default!;
         return Unsafe.As<IEntity, T>(ref entity);
     }
 
-    public T? Read<T>(ReadOnlySpan<string> route, T onError, IFormatProvider provider = null!) where T: IParsable<T> {
-        YAMLValue entity = this.Read<YAMLValue>(route);
+    public T Read<T>(ReadOnlySpan<string> route, T onError = default!, IFormatProvider provider = null!) where T: IParsable<T> {
+        YAMLValue? entity = this.Read<YAMLValue>(route);
 
-        if(entity != null && entity.Serialize<T>(out T? result, provider))
-            return result;
+        if(entity != null && entity.Read<T>(out T? result, provider))
+            return result!;
 
         return onError;
     }
 
-    /// <summary>
-    /// Write a(n) <typeparamref name="T"/> instance to the current instance.
-    /// </summary>
-    /// <typeparam name="T">Type of the value. This argument must be one of these types: <see cref="IFormattable"/>, <see cref="YAMLBase"/>, <see cref="ISerializable"/>, <see cref="string"/> or any <b>primitive</b> type.</typeparam>
-    /// <param name="route">Target of the write process in the object. If this is empty, then the write process target is the current instance.</param>
-    /// <param name="key">Key of the <paramref name="value"/>. This <paramref name="key"/> must be not equal with <see langword="null"/> or <see cref="YAMLBase.KEYLESS"/>.</param>
-    /// <param name="value">The value itself.</param>
-    /// <param name="format">Format of the <paramref name="value"/>. This is ignored, when the <typeparamref name="T"/> not implement the <see cref="IFormattable"/> interface.</param>
-    /// <param name="provider">Current environment of the runtime. This is ignored, when the <typeparamref name="T"/> not implement the <see cref="IFormattable"/> interface.</param>
-    /// <exception cref="ArgumentException"/>
-    /// <exception cref="KeyNotFoundException"/>
-    /// <exception cref="IndexOutOfRangeException"/>
+    public List<T> ReadRange<T>(ReadOnlySpan<string> route) where T: IEntity {
+        IEntity entity = route.Length == 0 ? this : Read<IEntity>(route)!;
+        List<T> list = new List<T>();
+
+        if (entity is not IEnumerable<IEntity>)
+            throw new ArgumentException(message: $"The reached object is not implement IEnumerable<{nameof(IEntity)}>. Maybe try the Read<T> where {nameof(T)}: {nameof(IEntity)} function instead.");
+
+        foreach(IEntity field in (IEnumerable<IEntity>)entity)
+            if (field is T cast) list.Add(item: cast);
+
+        return list;
+    }
+
+    public List<T> ReadRange<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T> {
+        List<T> list = new List<T>();
+
+        foreach (YAMLValue field in this.ReadRange<YAMLValue>(route))
+            if (field != null && field.Read<T>(out T? serialized, provider))
+                list.Add(item: serialized!);
+
+        return list;
+    }
+
     public void Write<T>(ReadOnlySpan<string> route, string key, T value, string format = null!, IFormatProvider provider = null!) {
-        IEntity target = route.Length == 0 ? this : this.Read<YAMLBase>(route);
+        IEntity target = route.IsEmpty ? this : this.Read<YAMLBase>(route)!;
+
+        if (key == null || key == string.Empty)
+            key = YAMLBase.KEYLESS;
 
         IEntity? field = value switch {
             IEntity => Unsafe.As<T, IEntity>(ref value),
@@ -89,14 +107,21 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
         if(target is YAMLBase @base) @base.Create(entity: field);
     }
 
+    public void WriteRange<T>(ReadOnlySpan<string> route, List<(string Key, T Value)> list, string format = null!, IFormatProvider provider = null!) {
+        YAMLBase target = route.IsEmpty ? this : Read<YAMLBase>(route)!;
+
+        foreach((string key, T value) in CollectionsMarshal.AsSpan<(string, T)>(list))
+            target.Write<T>(route: [], key, value, format, provider);
+    }
+
     /// <summary>
-    /// Resolve a <see cref="YAMLBase"/> instance independently from the collection type.
+    /// Resolve an <see cref="IEntity"/> instance independently from the storage of the <see cref="IEntity"/> instances inside the child class.
     /// </summary>
-    /// <returns>Return a <see cref="YAMLBase"/> instance.</returns>
+    /// <returns>Return an <see cref="IEntity"/> instance.</returns>
     protected abstract IEntity Resolve(string key);
 
     /// <summary>
-    /// Add <see cref="IEntity"/> instance to the collection.
+    /// Add <see cref="IEntity"/> instance to the storage.
     /// </summary>
     /// <param name="entity">The value itself.</param>
     protected abstract void Create(IEntity entity);

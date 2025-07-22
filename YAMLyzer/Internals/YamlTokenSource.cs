@@ -15,18 +15,18 @@ internal struct YamlTokenSource: IDisposable {
     [FieldOffset(offset: 0)] private StreamReader _reader = null!;
     [FieldOffset(offset: 0)] private string _str = null!;
 
-    [FieldOffset(offset: 8)] private int _strReaderPosition = 0;
+    [FieldOffset(offset: 8)]  private int _strReaderPosition = 0;
     [FieldOffset(offset: 12)] private bool _isStream = false;
 
     /// <summary>
     /// Indicates the content is reached the end of the file.
     /// </summary>
-    public readonly bool EndOfStream { get => _isStream ? _reader.EndOfStream : _str.Length <= _strReaderPosition; }
+    public readonly bool EOS { get => _isStream ? _reader.EndOfStream : _str.Length <= _strReaderPosition; }
 
     /// <summary>
     /// Provides a near token count tip from the source.
     /// </summary>
-    public readonly int PossibleTokenCount { get => CalcDelimiters();  }
+    public readonly int PossibleTokenCount { get => TipPossibleTokenCount();  }
 
     public YamlTokenSource(StreamReader reader) {
         this._reader = reader;
@@ -78,7 +78,7 @@ internal struct YamlTokenSource: IDisposable {
         return line;
     }
 
-    private readonly int CalcDelimiters() {
+    private readonly int TipPossibleTokenCount() {
         if (!_isStream) {
             int delimiterCount = 0;
 
