@@ -341,7 +341,7 @@ public static class YAMLSerializer {
 
     private static int IndexOf<T, U>(U searchItem, Func<T, U> prop, ReadOnlySpan<T> collection) where U: IEquatable<U> {
         for (int i = 0; i < collection.Length; ++i) {
-            if (prop(collection[i]).Equals(other: searchItem))
+            if (((collection[i] is YamlToken token) && token.Value != string.Empty) && prop(collection[i]).Equals(other: searchItem))
                 return i;
         }
 

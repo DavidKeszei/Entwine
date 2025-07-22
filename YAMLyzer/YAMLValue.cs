@@ -65,7 +65,10 @@ public class YAMLValue: IEntity {
         };
     }
 
-    public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{m_value}" : $"{m_key}: {m_value}";
+    public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{IsNULL()}" : $"{m_key}: {IsNULL()}";
+
+    private string IsNULL()
+        => (m_value == string.Empty ? "null" : m_value);
 }
 
 /// <summary>
