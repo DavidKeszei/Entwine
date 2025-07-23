@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer.Interfaces;
+namespace YAMLyzer;
 
 /// <summary>
 /// Provides clear/reset functionality for a class.

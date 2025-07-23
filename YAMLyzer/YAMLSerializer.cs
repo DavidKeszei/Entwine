@@ -8,7 +8,6 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
-using YAMLyzer.Internals;
 
 namespace YAMLyzer;
 
