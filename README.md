@@ -15,9 +15,6 @@ Last reason is I am very curious doing this without using the Reflection API of 
 ## Requirements
 - .NET9 or above
 
-## Requirement
-- NET9 or above
-
 ## Example Code
 ```cs
 /* Test YAML string of the deserialization. */
