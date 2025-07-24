@@ -17,12 +17,12 @@ internal record struct PoolItem<T> where T : IClearable, new() {
     /// <summary>
     /// The data itself.
     /// </summary>
-    public T Data { get => m_data; }
+    public readonly T Data { get => m_data; }
 
     /// <summary>
     /// Indicates the data instance is rented/used somewhere else in the code. 
     /// </summary>
-    public bool IsUsed { get => m_isUsed; init => m_isUsed = value; }
+    public readonly bool IsUsed { get => m_isUsed; init => m_isUsed = value; }
 
     public PoolItem(T data, bool isUsed) {
         this.m_data = data;

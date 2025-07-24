@@ -37,7 +37,7 @@ public class YAMLValue: IEntity {
         result = default!;
 
         if(m_value[0] == '~' || m_value == "null") return false;
-        return T.TryParse(m_value, provider, out result);
+        return T.TryParse(s: m_value, provider, out result);
     }
 
     /// <summary>
@@ -45,7 +45,7 @@ public class YAMLValue: IEntity {
     /// </summary>
     /// <typeparam name="T">Type of the primitive.</typeparam>
     /// <exception cref="FormatException"/>
-    public T Read<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(m_value, provider);
+    public T Read<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(s: m_value, provider);
 
     /// <summary>
     /// Write <typeparamref name="T"/> value to current <see cref="YAMLValue"/> instance.
@@ -56,12 +56,12 @@ public class YAMLValue: IEntity {
     /// <param name="provider">Current environment of the runtime.</param>
     /// <exception cref="ArgumentException"/>
     public void Write<T>(T value, string format = null!, IFormatProvider provider = null!) {
-        _ = value switch {
-            IFormattable => m_value = ((IFormattable)value).ToString(format, provider),
-            string => m_value = Unsafe.As<T, string>(ref value),
+        m_value = value switch {
+            IFormattable => ((IFormattable)value).ToString(format, provider),
+            string => Unsafe.As<T, string>(ref value),
 
-            bool => m_value = $"{value}",
-            _ => throw new ArgumentException(message: "The T type argument must be equal with some primitive type. (int, string, etc.)")
+            bool => $"{value}".ToLower(),
+            _ => throw new ArgumentException(message: "The T type argument must be equal with a primitive type. (int, string, etc.)")
         };
     }
 
@@ -69,20 +69,4 @@ public class YAMLValue: IEntity {
 
     private string IsNULL()
         => (m_value == string.Empty ? "null" : m_value);
-}
-
-/// <summary>
-/// Provides identifier capabilities for a YAML entity.
-/// </summary>
-public interface IEntity {
-
-    /// <summary>
-    /// Key of the <see cref="IEntity"/>.
-    /// </summary>
-    public string Key { get; }
-
-    /// <summary>
-    /// Type of the <see cref="IEntity"/>.
-    /// </summary>
-    public YAMLType TypeOf { get; }
 }

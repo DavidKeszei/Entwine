@@ -11,7 +11,7 @@ namespace YAMLyzer;
 /// Represent a pool of reusable <typeparamref name="T"/> instances.
 /// </summary>
 /// <typeparam name="T">Type of the pool instances. Must be implement the <see cref="IClearable"/> interface and must have a parameterless constructor.</typeparam>
-internal class ObjectPool<T> where T: IClearable, new() {
+internal class ObjectPool<T> where T: class, IClearable, new() {
     [ThreadStatic]
     private static ObjectPool<T> m_shared = null!;
     private readonly List<PoolItem<T>> m_objects = null!;

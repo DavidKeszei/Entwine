@@ -84,7 +84,7 @@ public static class YAMLSerializer {
                     int newlinePos = IndexOf<YamlToken, char>(searchItem: '\n', prop: static (x) => x.Value[0], tokens[count..]);
 
                     if ((newlinePos < arrayEnd && newlinePos != -1) || arrayEnd == -1)
-                        throw new FormatException(message: "The inline array must have a closer character in the YAML file. (\']\')");
+                        throw new FormatException(message: "The inline array must have a enclosing10 character in the YAML file. (\']\')");
 
                     arrayEnd += count;
                     IEntity[] collectionOf = new YAMLValue[arrayEnd - ++count];

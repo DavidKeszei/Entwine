@@ -33,7 +33,7 @@ internal class YamlLexer: IDisposable {
     /// </summary>
     /// <returns>Return a collection of <see cref="YamlToken"/>s.</returns>
     /// <exception cref="IndexOutOfRangeException"/>
-    /// <exception cref="YamlParserException"/>
+    /// <exception cref="YamlLexerException"/>
     public Task<List<YamlToken>> CreateTokens() {
         List<YamlToken> tokens = new List<YamlToken>(capacity: _file.PossibleTokenCount);
         Span<char> buffer = stackalloc char[MAX_BUFFER_COUNT];
@@ -78,7 +78,7 @@ internal class YamlLexer: IDisposable {
                 case '\n':
                 case '\r':
                     if((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR)
-                        throw new YamlParserException(msg: "The string value not has enclosing character.", m_position.line - 1, m_position.character);
+                        throw new YamlLexerException(msg: "The string value not has enclosing character.", m_position.line - 1, m_position.character);
 
                     if (buffer[index - 1] == '\r') _ = this._file.Read();
 
@@ -216,7 +216,7 @@ internal class YamlLexer: IDisposable {
                 ReadOnlySpan<char> trim = buff[start..i].Trim(trimChars: [' ', '\'', '\"']);
 
                 if(trim.IsEmpty)
-                    throw new YamlParserException(msg: $"A collection entry must declared somehow in the collection.", 
+                    throw new YamlLexerException(msg: $"A collection entry must declared somehow in the collection.", 
                                                   line: m_position.line - 1, 
                                                   character: m_position.character);
 
