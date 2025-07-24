@@ -61,7 +61,7 @@ internal class YamlLexer: IDisposable {
                 flags &= ~YamlLexerFlag.IS_START_OF_THE_LINE;
             }
 
-            if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR && multiStringOrder == -1) 
+            if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR && multiStringOrder == -1 && tokens[^2].Type == YamlTokenType.MultilineStringIndicator) 
                 multiStringOrder = order;
 
             switch (buffer[index - 1]) {
@@ -77,8 +77,8 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '\n':
                 case '\r':
-                    if((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR)
-                        throw new YamlLexerException(msg: "The string value not has enclosing character.", m_position.line - 1, m_position.character);
+                    if((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (flags & YamlLexerFlag.IS_MULTILINE_STR) != YamlLexerFlag.IS_MULTILINE_STR)
+                        throw new YamlLexerException(msg: "The inline string value must have an enclosing tag.", m_position.line - 1, m_position.character);
 
                     if (buffer[index - 1] == '\r') _ = this._file.Read();
 
@@ -216,7 +216,7 @@ internal class YamlLexer: IDisposable {
                 ReadOnlySpan<char> trim = buff[start..i].Trim(trimChars: [' ', '\'', '\"']);
 
                 if(trim.IsEmpty)
-                    throw new YamlLexerException(msg: $"A collection entry must declared somehow in the collection.", 
+                    throw new YamlLexerException(msg: $"A collection entry must declared somehow in the collection with value or NULL.", 
                                                   line: m_position.line - 1, 
                                                   character: m_position.character);
 
