@@ -26,7 +26,7 @@ __Implements:__ IEntity, IReadableEntity, IWriteableEntity
 |  Name  | Description                                                                                    |
 |:------:|------------------------------------------------------------------------------------------------|
 | Key    | Key of the current YAMLBase instance.                                                          |
-| TypeOf | Type of the current YAMLBase instance. This property must be overwritten by the child classes. |
+| TypeOf | Type of the current YAMLBase instance. This property must be overwritten by the child class. |
 
 __C# Code__</br>
 ```csharp
