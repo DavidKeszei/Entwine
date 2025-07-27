@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer;
+namespace YAMLyzer.Buffers;
 
 /// <summary>
 /// Smallest unit of the <see cref="ObjectPool{T}"/>.
