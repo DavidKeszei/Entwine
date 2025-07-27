@@ -18,16 +18,18 @@ public static ObjectPool<T> Shared { get; }
 Return a ObjectPool&lt;T&gt; instance.
 
 # Functions
-#### ObjectPool&lt;T&gt;.Rent()
+### ObjectPool&lt;T&gt;.Rent()
 Rent a(n) __T__ instance from the pool.
 
 ```cs
 public T Rent();
 ```
-##### Return
+#### Return
 Return a(n) __T__ instance.
 
-#### ObjectPool&lt;T&gt;.Return()
+-------
+
+### ObjectPool&lt;T&gt;.Return()
 Return a(n) __T__ instance to the pool.
 
 ```cs
