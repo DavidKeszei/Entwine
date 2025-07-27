@@ -1,7 +1,7 @@
 # ObjectPool&lt;T&gt; class
 
 __Location:__ YAMLyzer.Buffers<br/>
-__Source:__ [ObjectPool.cs](https://github.com/DavidKeszei/YAMLyzer/blob/nightly/YAMLyzer/Internals/Buffers/ObjectPool.cs)
+__Source:__ [ObjectPool.cs](https://github.com/DavidKeszei/YAMLyzer/blob/nightly/YAMLyzer/Internals/Buffers/ObjectPool/ObjectPool.cs)
 
 Represent a pool of reusable instances.
 ```cs
