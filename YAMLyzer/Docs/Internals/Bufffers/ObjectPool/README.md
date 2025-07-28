@@ -3,7 +3,7 @@ __YAMLyzer / Internals / Buffers__
 # ObjectPool&lt;T&gt; class
 
 __Location:__ YAMLyzer.Buffers<br/>
-__Source:__ [ObjectPool.cs](https://github.com/DavidKeszei/YAMLyzer/blob/nightly/YAMLyzer/Internals/Buffers/ObjectPool.cs)
+__Source:__ [ObjectPool.cs](https://github.com/DavidKeszei/YAMLyzer/blob/nightly/YAMLyzer/Internals/Buffers/ObjectPool/ObjectPool.cs)
 
 Represent a pool of reusable instances.
 ```cs
@@ -29,7 +29,9 @@ __Return:__ Return a(n) __T__ instance.
 
 <br/>
 
-#### ObjectPool&lt;T&gt;.Return()
+-------
+
+### ObjectPool&lt;T&gt;.Return()
 Return a(n) __T__ instance to the pool.
 
 ```cs
