@@ -6,14 +6,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using YAMLyzer.Interfaces;
 
 namespace YAMLyzer;
 
 /// <summary>
 /// Represent a YAML object from any source.
 /// </summary>
-public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity> {
+public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>, ICopyable<YAMLObject> {
     private Dictionary<string, IEntity> m_entities = null!;
     private bool m_isCopied = false;
 

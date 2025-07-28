@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 
 namespace YAMLyzer;
 
-public class YamlParserException: Exception {
+public class YamlLexerException: Exception {
     private string _msg = string.Empty;
 
-    public YamlParserException(string msg, int line, int character): 
+    public YamlLexerException(string msg, int line, int character): 
         base(message: $"{msg} (Line: {line}, Character: {character})") { }
 }

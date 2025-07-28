@@ -24,7 +24,7 @@ internal struct YamlTokenSource: IDisposable {
     public readonly bool EOS { get => _isStream ? _reader.EndOfStream : _str.Length <= _strReaderPosition; }
 
     /// <summary>
-    /// Provides a near token count tip from the source.
+    /// Provides a token count tip from the source.
     /// </summary>
     public readonly int PossibleTokenCount { get => TipPossibleTokenCount();  }
 

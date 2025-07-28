@@ -8,7 +8,7 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
-using YAMLyzer.Internals;
+using YAMLyzer.Buffers;
 
 namespace YAMLyzer;
 
@@ -38,6 +38,7 @@ public static class YAMLSerializer {
     /// <param name="source">The YAML string.</param>
     /// <returns>Return an <see cref="IReadableEntity"/> instance.</returns>
     /// <exception cref="FormatException"/>
+    /// <exception cref="YamlLexerException"/>
     public static async Task<IReadableEntity> Deserialize(string source) {
         using YamlLexer lexer = new YamlLexer(source);
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
@@ -85,7 +86,7 @@ public static class YAMLSerializer {
                     int newlinePos = IndexOf<YamlToken, char>(searchItem: '\n', prop: static (x) => x.Value[0], tokens[count..]);
 
                     if ((newlinePos < arrayEnd && newlinePos != -1) || arrayEnd == -1)
-                        throw new FormatException(message: "The inline array must have a closer character in the YAML file. (\']\')");
+                        throw new FormatException(message: "The inline array must have a enclosing10 character in the YAML file. (\']\')");
 
                     arrayEnd += count;
                     IEntity[] collectionOf = new YAMLValue[arrayEnd - ++count];
@@ -157,7 +158,7 @@ public static class YAMLSerializer {
             return Task.FromResult<string>(result: $"{entity}");
 
         foreach (IEntity prop in (IEnumerable<IEntity>)entity) {
-            if (prop is IReadableEntity) RecursivelySerialize(prop, builder, indentation: 0, isCollection: false);
+            if (prop is IReadableEntity) RecursivelySerialize(prop, builder, indentation: 0, parentIsCollection: false);
             else builder.AppendLine($"{prop}");
         }
 
@@ -354,31 +355,57 @@ public static class YAMLSerializer {
         return tokens.Length > 5;
     }
 
-    private static void RecursivelySerialize(IEntity parent, StringBuilder builder, int indentation, bool isCollection) {
+    private static void RecursivelySerialize(IEntity parent, StringBuilder builder, int indentation, bool parentIsCollection) {
         if(parent is IEmptiable empty && empty.IsEmpty) {
 
             if(builder.Length > 2 && builder[^2] != '-')
-                AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
+                AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
 
-            builder.Append($"{(isCollection ? "-" : string.Empty)} {parent.Key}: ~");
+            builder.Append($"{(parentIsCollection ? "-" : string.Empty)} {parent.Key}: ~");
             return;
         }
 
-        if (isCollection) builder.Append("- ");
+        if (parentIsCollection) builder.Append("- ");
         if (parent.Key != YAMLBase.KEYLESS) builder.Append($"{parent.Key}:\n");
 
         foreach (IEntity entity in (IEnumerable<IEntity>)parent) {
 
             if (entity is YAMLBase obj) {
-                if (builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
+                if (builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
 
-                RecursivelySerialize(obj, builder, indentation + 1 + (isCollection ? 1 : 0), parent.TypeOf == YAMLType.Collection);
+                RecursivelySerialize(obj, builder, indentation + 1 + (parentIsCollection ? 1 : 0), parent.TypeOf == YAMLType.Collection);
                 continue;
             }
 
-            if(builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (isCollection ? 1 : 0));
-            builder.Append($"{(parent.TypeOf == YAMLType.Collection ? "- " : string.Empty)}{entity}\n");
+            if(builder.Length > 2 && builder[^2] != '-') AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
+            AppendValue(builder, (YAMLValue)entity, indentation: indentation + 1 + (parentIsCollection ? 1 : 0), parentIsCollection: parent.TypeOf == YAMLType.Collection);
         }
+    }
+
+    private static void AppendValue(StringBuilder builder, YAMLValue value, int indentation, bool parentIsCollection) {
+        ReadOnlySpan<char> str = value.Read<string>();
+
+        if(str.Contains<char>(value: '\n') || str.Length >= YamlLexer.MAX_BUFFER_COUNT) {
+            bool isContainsNewLine = str.Contains<char>(value: '\n');
+            builder.Append(value: $"{(parentIsCollection ? "- " : string.Empty)}{value.Key}: {(isContainsNewLine ? '>' : '|')}\n");
+
+            AppendIndentation(builder, indentation + 2);
+
+            for(int i = 0; i < str.Length; ++i) {
+                if(str[i] == '\n' || (str.Length % YamlLexer.MAX_BUFFER_COUNT == 0 && i != 0)) {
+                    builder.Append(value: '\n');
+                    
+                    if(str.Length - 1 != i) AppendIndentation(builder, indentation + 2);
+                    continue;
+                }
+
+                builder.Append(value: str[i]);
+            }
+
+            return;
+        }
+
+        builder.Append($"{(parentIsCollection ? "- " : string.Empty)}{value}\n");
     }
 
     private static void AppendIndentation(StringBuilder builder, int count) {

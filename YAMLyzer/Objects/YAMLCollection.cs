@@ -6,14 +6,13 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
-using YAMLyzer.Interfaces;
 
 namespace YAMLyzer;
 
 /// <summary>
 /// Represent a collection inside a YAML document.
 /// </summary>
-public class YAMLCollection: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity> {
+public class YAMLCollection: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>, ICopyable<YAMLCollection> {
     private readonly List<IEntity> m_collection = null!;
     private bool m_isCopied = false;
 
