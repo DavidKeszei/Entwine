@@ -38,6 +38,7 @@ public static class YAMLSerializer {
     /// <param name="source">The YAML string.</param>
     /// <returns>Return an <see cref="IReadableEntity"/> instance.</returns>
     /// <exception cref="FormatException"/>
+    /// <exception cref="YamlLexerException"/>
     public static async Task<IReadableEntity> Deserialize(string source) {
         using YamlLexer lexer = new YamlLexer(source);
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());

@@ -10,7 +10,7 @@ namespace YAMLyzer.Buffers;
 /// Smallest unit of the <see cref="ObjectPool{T}"/>.
 /// </summary>
 /// <typeparam name="T">Type of the <see cref="Data"/> instance. Must be implement the <see cref="IClearable"/> interface and must have a parameterless constructor.</typeparam>
-internal record struct PoolItem<T> where T : IClearable, new() {
+internal record struct PoolItem<T> where T : class, IClearable, new() {
     private readonly T m_data = default!;
     private bool m_isUsed = false;
 
@@ -22,7 +22,7 @@ internal record struct PoolItem<T> where T : IClearable, new() {
     /// <summary>
     /// Indicates the data instance is rented/used somewhere else in the code. 
     /// </summary>
-    public readonly bool IsUsed { get => m_isUsed; init => m_isUsed = value; }
+    public readonly bool IsUsed { get => m_isUsed; internal init => m_isUsed = value; }
 
     public PoolItem(T data, bool isUsed) {
         this.m_data = data;

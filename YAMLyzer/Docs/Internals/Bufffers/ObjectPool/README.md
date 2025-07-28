@@ -1,3 +1,5 @@
+__YAMLyzer / Internals / Buffers__
+
 # ObjectPool&lt;T&gt; class
 
 __Location:__ YAMLyzer.Buffers<br/>
@@ -10,22 +12,22 @@ internal class ObjectPool<T> where T: class, IClearable, new()
 
 # Properties
 #### ObjectPool&lt;T&gt;.Shared
-Tread-safe, shared instance of the ObjectPool&lt;T&gt; class.
+Thread-safe, shared instance of the ObjectPool&lt;T&gt; class.
 ```cs
 public static ObjectPool<T> Shared { get; }
 ```
-##### Return
-Return a ObjectPool&lt;T&gt; instance.
+__Return:__ Return a ObjectPool&lt;T&gt; instance.
 
 # Functions
-#### ObjectPool&lt;T&gt;.Rent()
+#### ObjectPool&lt;T&gt;.Rent()<br/>
 Rent a(n) __T__ instance from the pool.
 
 ```cs
 public T Rent();
 ```
-##### Return
-Return a(n) __T__ instance.
+__Return:__ Return a(n) __T__ instance.
+
+<br/>
 
 #### ObjectPool&lt;T&gt;.Return()
 Return a(n) __T__ instance to the pool.

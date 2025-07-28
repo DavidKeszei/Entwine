@@ -47,7 +47,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
         IEntity entity = Resolve(key: route[0]);
 
         if(route.Length > 1 && entity is IReadableEntity readable) entity = readable.Read<T>(route[1..])!;
-        else if(route.Length > 1 && entity is not IReadableEntity) throw new AccessViolationException(message: "The route is too long. (Are you sure you don't go too far?)");
+        else if(route.Length > 1 && entity is not IReadableEntity) throw new AccessViolationException(message: "The route is too long. (Are you sure you don't goes too far?)");
 
         if (entity is not T) entity = default!;
         return Unsafe.As<IEntity, T>(ref entity);
