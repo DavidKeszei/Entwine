@@ -8,5 +8,5 @@ Contains helper classes & structures for processing a YAML source to a C# object
 
 |         Name        | Description                                |
 |:-------------------:|--------------------------------------------|
-| [ObjectPool&lt;T&gt;](https://github.com/DavidKeszei/YAMLyzer/tree/nightly/YAMLyzer/Docs/Internals/Bufffers/ObjectPool) | Represent a pool of reusable instances.    |
-| [PoolItem&lt;T&gt;](https://github.com/DavidKeszei/YAMLyzer/tree/nightly/YAMLyzer/Docs/Internals/Bufffers/PoolItem)     | Wrapper structure for tracking pool items. |
+| [ObjectPool&lt;T&gt;](https://github.com/DavidKeszei/YAMLyzer/tree/nightly/YAMLyzer/Docs/Internals/Buffers/ObjectPool) | Represent a pool of reusable instances.    |
+| [PoolItem&lt;T&gt;](https://github.com/DavidKeszei/YAMLyzer/tree/nightly/YAMLyzer/Docs/Internals/Buffers/PoolItem)     | Wrapper structure for tracking pool items. |
