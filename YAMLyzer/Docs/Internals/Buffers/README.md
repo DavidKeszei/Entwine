@@ -2,7 +2,7 @@ __YAMLyzer / API__
 
 # YAMLyzer.Internals namespace
 
-Contains helper classes & structures for processing a YAML source to a C# objects & vice-versa.
+Contains helper classes & structures for processing a YAML source to C# objects & vice-versa.
 
 ## Classes & Structures
 
