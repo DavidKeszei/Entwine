@@ -17,7 +17,7 @@ Underlying instance of the PoolItem&lt;T&gt; struct.
 ```cs
 public readonly PoolItem<T> Data { get; }
 ```
-__Return:__ Return a ObjectPool&lt;T&gt; instance.
+__Return:__ Return the underlying T instance.
 
 <br/>
 
@@ -26,4 +26,4 @@ Indicates the underlying data is used somewhere else.
 ```cs
 public readonly PoolItem<T> Data { get; init; }
 ```
-__Return:__ Return a ObjectPool&lt;T&gt; instance.
+__Return:__ Indicates the T data is used somewhere else in the code.
