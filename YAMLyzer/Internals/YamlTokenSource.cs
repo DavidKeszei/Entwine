@@ -71,10 +71,18 @@ internal struct YamlTokenSource: IDisposable {
         if (_isStream)
             return _reader.ReadLine() ?? string.Empty;
 
-        int newLine = _str.IndexOf(value: Environment.NewLine, startIndex: _strReaderPosition);
-        string line = _str[_strReaderPosition..newLine];
+        int newLine = _str.IndexOf(value: Environment.NewLine, startIndex: _strReaderPosition, comparisonType: StringComparison.CurrentCulture);
+        string line = null!;
 
+        if(newLine == -1) {
+            line = _str[_strReaderPosition..];
+            _strReaderPosition = _str.Length;
+            return line;
+        }
+
+        line = _str[_strReaderPosition..newLine];
         _strReaderPosition = newLine + 1;
+
         return line;
     }
 

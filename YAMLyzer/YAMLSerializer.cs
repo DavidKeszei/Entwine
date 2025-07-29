@@ -53,7 +53,7 @@ public static class YAMLSerializer {
         while (tokens.Length > count) {
             switch (tokens[count].Type) {
 
-                case YamlTokenType.Delimiter:
+                case YamlTokenType.Assign:
                     id = tokens[count - 1].Value;
                     ++count;
                     break;
@@ -63,7 +63,7 @@ public static class YAMLSerializer {
                         break;
                     }
 
-                    if (tokens[count - 1].Type == YamlTokenType.Delimiter) {
+                    if (tokens[count - 1].Type == YamlTokenType.Assign) {
                         int objEnd = FirstIndentationOf(tokens[count].Indentation, tokens[(count + 1)..]);
 
                         if (objEnd != -1) {
@@ -191,7 +191,7 @@ public static class YAMLSerializer {
                0   1   2   3    4 
         */
         int index = isCollection && tokens.Length > 2 && 
-                    (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Delimiter) ? 2 : 1;
+                    (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Assign) ? 2 : 1;
 
         /* Indicates the current entry is a object or just a primitive value inside in a collection */
         bool isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
@@ -199,7 +199,7 @@ public static class YAMLSerializer {
         while (tokens.Length > index) {
             switch (tokens[index].Type) {
 
-                case YamlTokenType.Delimiter:
+                case YamlTokenType.Assign:
                     id = tokens[index - 1].Value;
                     ++index;
 
@@ -210,7 +210,7 @@ public static class YAMLSerializer {
                         break;
                     }
 
-                    if (tokens[index - 1].Type == YamlTokenType.Delimiter) {
+                    if (tokens[index - 1].Type == YamlTokenType.Assign) {
                         int objEnd = FirstIndentationOf(tokens[index].Indentation, tokens[(index + 1)..]);
                         isCollectionObjectEntry = true;
 
