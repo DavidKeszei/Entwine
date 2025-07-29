@@ -29,8 +29,6 @@ __Return:__ Return a(n) __T__ instance.
 
 <br/>
 
--------
-
 ### ObjectPool&lt;T&gt;.Return()
 Return a(n) __T__ instance to the pool.
 
