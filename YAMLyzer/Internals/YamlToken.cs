@@ -1,4 +1,4 @@
-﻿namespace YAMLyzer;
+﻿namespace Entwine;
 
 /// <summary>
 /// Smallest unit of the YAML string by the parser.
@@ -41,12 +41,12 @@ internal readonly struct YamlToken {
 
 /*
 # This file is auto-generated. Don't modify anything in this file.
-path: 'C:/david/source/repos/YAMLyzer'
-name: 'YAMLyzer'
+path: 'C:/david/source/repos/Entwine'
+name: 'Entwine'
 desc: >
     This project help de-/serialize objects to YAML string and vice-versa.
 presets:
-    - 'C:/david/source/repos/YAMLyzer/Debug_x86.yaml'
-    - 'C:/david/source/repos/YAMLyzer/Release_x86'
+    - 'C:/david/source/repos/Entwine/Debug_x86.yaml'
+    - 'C:/david/source/repos/Entwine/Release_x86'
 supported_cli_versions: [ '.NET8', '.NET9' ]
 */

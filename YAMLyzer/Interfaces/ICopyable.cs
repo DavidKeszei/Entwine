@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer;
+namespace Entwine;
 
 /// <summary>
 /// Provides copy mechnism for an <typeparamref name="TSelf"/> class.

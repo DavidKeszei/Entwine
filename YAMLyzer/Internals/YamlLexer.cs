@@ -6,7 +6,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer;
+namespace Entwine;
 
 /// <summary>
 /// Helper class for create lexical tokens from a <see cref="YamlTokenSource"/>.

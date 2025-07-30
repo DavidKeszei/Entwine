@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer;
+namespace Entwine;
 
 /// <summary>
 /// Represent a source for a YAML string.

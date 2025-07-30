@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer;
+namespace Entwine;
 
 /// <summary>
 /// Represent a collection inside a YAML document.

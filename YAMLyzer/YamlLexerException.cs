@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer;
+namespace Entwine;
 
 public class YamlLexerException: Exception {
     private string _msg = string.Empty;

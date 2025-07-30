@@ -8,9 +8,9 @@ using System.Runtime.InteropServices;
 using System.Security.Principal;
 using System.Text;
 using System.Threading.Tasks;
-using YAMLyzer.Buffers;
+using Entwine.Buffers;
 
-namespace YAMLyzer;
+namespace Entwine;
 
 /// <summary>
 /// Helper class for serialize objects/values to YAML and vice-versa.

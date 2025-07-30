@@ -1,4 +1,4 @@
-﻿namespace YAMLyzer;
+﻿namespace Entwine;
 
 /// <summary>
 /// Collection of possible YAML primitives.

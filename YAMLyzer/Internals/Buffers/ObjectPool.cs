@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace YAMLyzer.Buffers;
+namespace Entwine.Buffers;
 
 /// <summary>
 /// Represent a pool of reusable <typeparamref name="T"/> instances.
