@@ -1,17 +1,19 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entwine;
+namespace Entwine.Objects;
 
 /// <summary>
 /// Represent a collection inside a YAML document.
 /// </summary>
+[DebuggerDisplay(value: "{DebugView(),nq}")]
 public class YAMLCollection: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>, ICopyable<YAMLCollection> {
     private readonly List<IEntity> m_collection = null!;
     private bool m_isCopied = false;
@@ -86,4 +88,7 @@ public class YAMLCollection: YAMLBase, IClearable, IEmptiable, IEnumerable<IEnti
     }
 
     IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+
+    private string DebugView()
+        => $"{{{Key}: Count = {m_collection.Count}}}";
 }

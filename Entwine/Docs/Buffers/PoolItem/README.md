@@ -1,9 +1,9 @@
-__YAMLyzer / Internals / Buffers__
+__Entwine / Buffers__
 
 # PoolItem&lt;T&gt; struct
 
-__Location:__ YAMLyzer.Buffers<br/>
-__Source:__ [PoolItem.cs](https://github.com/DavidKeszei/YAMLyzer/blob/nightly/YAMLyzer/Internals/Buffers/PoolItem.cs)
+__Location:__ Entwine.Buffers<br/>
+__Source:__ [PoolItem.cs](https://github.com/DavidKeszei/Entwine/blob/nightly/Entwine/Internals/Buffers/PoolItem.cs)
 
 Wrapper structure for tracking pool items.
 ```cs
@@ -24,6 +24,6 @@ __Return:__ Return the underlying T instance.
 #### PoolItem&lt;T&gt;.IsUsed
 Indicates the underlying data is used somewhere else.
 ```cs
-public readonly PoolItem<T> Data { get; init; }
+public readonly PoolItem<T> Data { get; }
 ```
 __Return:__ Indicates the T data is used somewhere else in the code.

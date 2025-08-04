@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entwine;
+namespace Entwine.Objects;
 
 /// <summary>
 /// Smallest unit inside a YAML file.
@@ -44,6 +44,7 @@ public class YAMLValue: IEntity {
     /// Serialize the YAML value to a primitive type.
     /// </summary>
     /// <typeparam name="T">Type of the primitive.</typeparam>
+    /// <returns>Return a(n) <typeparamref name="T"/> instance.</returns>
     /// <exception cref="FormatException"/>
     public T Read<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(s: m_value, provider);
 
@@ -68,5 +69,5 @@ public class YAMLValue: IEntity {
     public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{IsNULL()}" : $"{m_key}: {IsNULL()}";
 
     private string IsNULL()
-        => (m_value == string.Empty ? "null" : m_value);
+        => (m_value == string.Empty ? "~" : m_value);
 }

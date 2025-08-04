@@ -1,9 +1,9 @@
-__YAMLyzer / Internals / Buffers__
+__Entwine / Buffers__
 
 # ObjectPool&lt;T&gt; class
 
-__Location:__ YAMLyzer.Buffers<br/>
-__Source:__ [ObjectPool.cs](https://github.com/DavidKeszei/YAMLyzer/blob/nightly/YAMLyzer/Internals/Buffers/ObjectPool.cs)
+__Location:__ Entwine.Buffers<br/>
+__Source:__ [ObjectPool.cs](https://github.com/DavidKeszei/Entwine/blob/nightly/Entwine/Internals/Buffers/ObjectPool.cs)
 
 Represent a pool of reusable instances.
 ```cs

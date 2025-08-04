@@ -7,7 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entwine;
+namespace Entwine.Objects;
 
 /// <summary>
 /// Represent a YAML object from any source.
@@ -17,7 +17,7 @@ public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>,
     private bool m_isCopied = false;
 
     /// <summary>
-    /// Indicates the object has any properties inside herself.
+    /// Indicates the object has any properties inside itself.
     /// </summary>
     public bool IsEmpty { get => m_entities == null || m_entities.Count == 0; }
 
@@ -45,13 +45,11 @@ public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>,
         }
     }
 
-    public YAMLObject(string key): base(key, type: YAMLType.Object) {
-        this.m_entities = new Dictionary<string, IEntity>(capacity: 16);
-    }
+    public YAMLObject(string key): base(key, type: YAMLType.Object) 
+        => this.m_entities = new Dictionary<string, IEntity>(capacity: 16);
 
-    public YAMLObject(): base(key: YAMLBase.KEYLESS, type: YAMLType.Object) {
-        this.m_entities = new Dictionary<string, IEntity>();
-    }
+    public YAMLObject(): base(key: YAMLBase.KEYLESS, type: YAMLType.Object)
+        => this.m_entities = new Dictionary<string, IEntity>();
 
     public IEnumerator<IEntity> GetEnumerator() {
         foreach (string key in m_entities.Keys)

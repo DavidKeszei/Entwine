@@ -9,7 +9,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entwine;
+namespace Entwine.Objects;
 
 /// <summary>
 /// Superclass of all YAML specific classes.
@@ -29,16 +29,21 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     private YAMLType m_type = YAMLType.None;
 
     /// <summary>
-    /// Type of the current <see cref="YAMLBase"/> instance. This property must be overwritten by the child classes.
+    /// Type of the current <see cref="YAMLBase"/> instance.
     /// </summary>
-    public virtual YAMLType TypeOf { get => m_type; }
+    public YAMLType TypeOf { get => m_type; }
 
     /// <summary>
     /// Key of the current <see cref="YAMLBase"/> instance.
     /// </summary>
     public string Key { get => m_key; internal set => m_key = value; }
 
-    public YAMLBase(string key, YAMLType type) {
+    /// <summary>
+    /// Create new <see cref="YAMLBase"/> instance by the child classes.
+    /// </summary>
+    /// <param name="key">Key of the object.</param>
+    /// <param name="type">Type of the object. This property must be overwritten by the child class.</param>
+    protected YAMLBase(string key, YAMLType type) {
         this.m_key = key;
         this.m_type = type;
     }
@@ -100,8 +105,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
             string => new YAMLValue(key, value: Unsafe.As<T, string>(ref value) == string.Empty ? "~" : Unsafe.As<T, string>(ref value)),
             bool => new YAMLValue(key, value: $"{Unsafe.As<T, bool>(ref value)}"),
 
-            null => new YAMLObject(key),
-            _ => null!
+            _ => throw new ArgumentException(message: $"The {nameof(value)} must be valid value. (See the function docs)")
         };
 
         if(target is YAMLBase @base) @base.Create(entity: field);
@@ -121,7 +125,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     protected abstract IEntity Resolve(string key);
 
     /// <summary>
-    /// Add <see cref="IEntity"/> instance to the storage.
+    /// Create and save <see cref="IEntity"/> instance to the storage.
     /// </summary>
     /// <param name="entity">The value itself.</param>
     protected abstract void Create(IEntity entity);
@@ -133,7 +137,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     /// <param name="serializable">The value itself.</param>
     /// <returns>Return a <see cref="IEntity"/> instance.</returns>
     private IEntity CreateEntity(string key, ISerializable serializable) {
-        IWriteableEntity entity = new YAMLObject(key);
+        IWriteableEntity entity = new YAMLObject(key: key);
         serializable.ToYAML(in entity);
 
         return (IEntity)entity;

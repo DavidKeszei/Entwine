@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Entwine;
 
 /// <summary>
-/// Provides copy mechnism for an <typeparamref name="TSelf"/> class.
+/// Provides copy mechanism for an <typeparamref name="TSelf"/> class.
 /// </summary>
 /// <typeparam name="TSelf">The implementer class type.</typeparam>
 public interface ICopyable<TSelf> {
