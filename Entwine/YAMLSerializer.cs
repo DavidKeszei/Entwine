@@ -25,7 +25,7 @@ public static class YAMLSerializer {
     /// <param name="source">The YAML <see cref="string"/>.</param>
     /// <returns>Return a(n) <typeparamref name="T"/> instance, if this is successful. Otherwise return <see langword="null"/>.</returns>
     /// <exception cref="FormatException"/>
-    public static async Task<T?> Deserialize<T>(string source) where T: ISerializable, new() {
+    public static async Task<T?> Deserialize<T>(YAMLSource source) where T: ISerializable, new() {
         IReadableEntity obj = await Deserialize(source);
         T deserialized = new T();
 
@@ -40,8 +40,9 @@ public static class YAMLSerializer {
     /// <returns>Return an <see cref="IReadableEntity"/> instance.</returns>
     /// <exception cref="FormatException"/>
     /// <exception cref="YamlLexerException"/>
-    public static async Task<IReadableEntity> Deserialize(string source) {
+    public static async Task<IReadableEntity> Deserialize(YAMLSource source) {
         using YamlLexer lexer = new YamlLexer(source);
+
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
         YAMLObject obj = new YAMLObject(key: YAMLBase.ROOT);
 
@@ -154,7 +155,6 @@ public static class YAMLSerializer {
     /// <param name="entity">The entity, which holds the data.</param>
     public static Task<string> Serialize(IEntity entity) {
         StringBuilder builder = new StringBuilder();
-
         if (entity is not IReadableEntity)
             return Task.FromResult<string>(result: $"{entity}");
 
@@ -328,7 +328,7 @@ public static class YAMLSerializer {
 
             builder.Append(value: token.Value);
         }
-
+        
         return builder.ToString();
     }
 
@@ -392,7 +392,7 @@ public static class YAMLSerializer {
         if(str.Contains<char>(value: YamlLexer.NEW_LINE[1]) || str.Length >= YamlLexer.MAX_BUFFER_COUNT) {
 
             bool isContainsNewLine = str.Contains<char>(value: YamlLexer.NEW_LINE[1]);
-            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION_TOKEN} " : string.Empty)}{value.Key}: {(isContainsNewLine ? YamlLexer.MULTILANE_STR_TOKEN : YamlLexer.FLOW_STR_TOKEN)}\n");
+            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION_TOKEN} " : string.Empty)}{value.Key}: {(isContainsNewLine ? YamlLexer.MULTILINE_STR_TOKEN : YamlLexer.FLOW_STR_TOKEN)}\n");
 
             AppendIndentation(builder, indentation + 2);
 

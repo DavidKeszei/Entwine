@@ -24,7 +24,7 @@ public class YAMLValue: IEntity {
 
     internal YAMLValue(string key, string value) {
         this.m_key = key;
-        this.m_value = value;
+        this.m_value = value ?? string.Empty;
     }
 
     /// <summary>
@@ -36,7 +36,9 @@ public class YAMLValue: IEntity {
     public bool Read<T>(out T? result, IFormatProvider provider = null!) where T: IParsable<T> {
         result = default!;
 
-        if(m_value[0] == '~' || m_value == "null") return false;
+        if(m_value == string.Empty || m_value == "~" || m_value == "null") 
+            return false;
+
         return T.TryParse(s: m_value, provider, out result);
     }
 
@@ -46,6 +48,7 @@ public class YAMLValue: IEntity {
     /// <typeparam name="T">Type of the primitive.</typeparam>
     /// <returns>Return a(n) <typeparamref name="T"/> instance.</returns>
     /// <exception cref="FormatException"/>
+    /// <exception cref="ArgumentNullException"/>
     public T Read<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(s: m_value, provider);
 
     /// <summary>
@@ -68,6 +71,5 @@ public class YAMLValue: IEntity {
 
     public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{IsNULL()}" : $"{m_key}: {IsNULL()}";
 
-    private string IsNULL()
-        => (m_value == string.Empty ? "~" : m_value);
+    private string IsNULL() => (m_value == string.Empty ? "~" : m_value);
 }

@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Entwine;
+namespace Entwine.Objects;
 
 /// <summary>
 /// Provides copy mechanism for an <typeparamref name="TSelf"/> class.

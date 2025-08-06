@@ -14,7 +14,7 @@ namespace Entwine.Objects;
 /// <summary>
 /// Superclass of all YAML specific classes.
 /// </summary>
-public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
+public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, IClearable {
     /// <summary>
     /// Root identifier for root object in the YAML graph.
     /// </summary>
@@ -93,8 +93,8 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
     public void Write<T>(ReadOnlySpan<string> route, string key, T value, string format = null!, IFormatProvider provider = null!) {
         IEntity target = route.IsEmpty ? this : this.Read<YAMLBase>(route)!;
 
-        if (key == null || key == string.Empty)
-            key = YAMLBase.KEYLESS;
+        if (key == null || key == string.Empty) key = YAMLBase.KEYLESS;
+        key = key.TrimStart(trimChar: YamlLexer.COMMENT_LINE_TOKEN);
 
         IEntity? field = value switch {
             IEntity => Unsafe.As<T, IEntity>(ref value),
@@ -117,6 +117,8 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
         foreach((string key, T value) in CollectionsMarshal.AsSpan<(string, T)>(list))
             target.Write<T>(route: [], key, value, format, provider);
     }
+
+    public abstract void Clear();
 
     /// <summary>
     /// Resolve an <see cref="IEntity"/> instance independently from the storage of the <see cref="IEntity"/> instances inside the child class.

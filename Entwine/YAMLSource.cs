@@ -11,7 +11,7 @@ namespace Entwine;
 /// Represent a source for a YAML string.
 /// </summary>
 [StructLayout(layoutKind: LayoutKind.Explicit)]
-internal struct YamlTokenSource: IDisposable {
+public struct YAMLSource: IDisposable {
     [FieldOffset(offset: 0)] private StreamReader _reader = null!;
     [FieldOffset(offset: 0)] private string _str = null!;
 
@@ -21,20 +21,33 @@ internal struct YamlTokenSource: IDisposable {
     /// <summary>
     /// Indicates the content is reached the end of the file.
     /// </summary>
-    public readonly bool EOS { get => _isStream ? _reader.EndOfStream : _str.Length <= _strReaderPosition; }
+    internal readonly bool EOS { get => _isStream ? _reader.EndOfStream : _str.Length <= _strReaderPosition; }
 
     /// <summary>
     /// Provides a token count tip from the source.
     /// </summary>
-    public readonly int PossibleTokenCount { get => TipPossibleTokenCount();  }
+    internal readonly int PossibleTokenCount { get => TipPossibleTokenCount();  }
 
-    public YamlTokenSource(StreamReader reader) {
-        this._reader = reader;
+    /// <summary>
+    /// Create new <see cref="YAMLSource"/> instance from a <see cref="Stream"/> instance.
+    /// </summary>
+    /// <param name="source">YAML source. This can be a file path or a YAML string.</param>
+    /// <exception cref="FileNotFoundException"/>
+    /// <exception cref="AccessViolationException"/>
+    /// <exception cref="IOException"/>
+    public YAMLSource(Stream source) {
+        this._reader = new StreamReader(stream: source);
         this._isStream = true;
     }
 
-    public YamlTokenSource(string yaml)
-        => this._str = yaml;
+    /// <summary>
+    /// Create new <see cref="YAMLSource"/> instance from a <see cref="string"/> instance.
+    /// </summary>
+    /// <param name="source">YAML source.</param>
+    public YAMLSource(string source) {
+        this._str = source;
+        this._isStream = false;
+    }
 
     public void Dispose() {
         if (_isStream)
@@ -44,8 +57,8 @@ internal struct YamlTokenSource: IDisposable {
     /// <summary>
     /// Read one character from the content and step forward the cursor by one.
     /// </summary>
-    /// <returns>Return the character code. If reached the EOF the content, then return -1.</returns>
-    public int Read() {
+    /// <returns>Return the character code. If reached the <see cref="EOS"/> the content, then return -1.</returns>
+    internal int Read() {
         if (_isStream)
             return _reader.Read();
     
@@ -53,10 +66,10 @@ internal struct YamlTokenSource: IDisposable {
     }
 
     /// <summary>
-    /// Peek one character from the content,
+    /// Peek one character from the content.
     /// </summary>
-    /// <returns>Return the character code. If reached the EOF the content, then return -1.</returns>
-    public readonly int Peek() {
+    /// <returns>Return the character code. If reached the <see cref="EOS"/> the content, then return -1.</returns>
+    internal readonly int Peek() {
         if (_isStream)
             return _reader.Peek();
 
@@ -67,7 +80,7 @@ internal struct YamlTokenSource: IDisposable {
     /// Read one line from the content and step forward the cursor by length of the line.
     /// </summary>
     /// <returns>Return a line. If reached the EOF the content or the character is a newline, then return <see cref="string.Empty"/>.</returns>
-    public string ReadLine() {
+    internal string ReadLine() {
         if (_isStream)
             return _reader.ReadLine() ?? string.Empty;
 
@@ -91,7 +104,7 @@ internal struct YamlTokenSource: IDisposable {
             int delimiterCount = 0;
 
             for (int i = 0; i < _str.Length; ++i) {
-                if (_str[i] == ':')
+                if (_str[i] == YamlLexer.ASSING_OPERATOR_TOKEN)
                     ++delimiterCount;
             }
 

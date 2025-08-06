@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace Entwine;
 
 /// <summary>
-/// Helper class for create lexical tokens from a <see cref="YamlTokenSource"/>.
+/// Helper class for create lexical tokens from a <see cref="YAMLSource"/>.
 /// </summary>
 internal class YamlLexer: IDisposable {
 
@@ -20,9 +20,9 @@ internal class YamlLexer: IDisposable {
     internal const char STRING_ENCLOSING_TAG_SINGLE_QUOTE = '\'';
 
     internal const char ASSING_OPERATOR_TOKEN = ':';
-    internal const char FLOW_STR_TOKEN = '|';
+    internal const char FLOW_STR_TOKEN = '>';
 
-    internal const char MULTILANE_STR_TOKEN = '>';
+    internal const char MULTILINE_STR_TOKEN = '|';
     internal const char VERTICAL_COLLECTION_TOKEN = '-';
 
     internal const char COMMENT_LINE_TOKEN = '#';
@@ -34,17 +34,12 @@ internal class YamlLexer: IDisposable {
     internal const string NEW_LINE = "\r\n";
     #endregion
 
-    private YamlTokenSource _file = default;
+    private YAMLSource m_file = default;
     private (int line, int character) m_position = (0, 0);
 
-    public YamlLexer(StreamReader utf8)
-        => this._file = new YamlTokenSource(reader: utf8);
+    public YamlLexer(YAMLSource source) => m_file = source;
 
-    public YamlLexer(string content)
-        => this._file = new YamlTokenSource(yaml: content);
-
-    public void Dispose() 
-        => this._file.Dispose();
+    public void Dispose() => this.m_file.Dispose();
 
     /// <summary>
     /// Create tokens from a YAML string or stream.
@@ -53,7 +48,7 @@ internal class YamlLexer: IDisposable {
     /// <exception cref="IndexOutOfRangeException"/>
     /// <exception cref="YamlLexerException"/>
     public Task<List<YamlToken>> CreateTokens() {
-        List<YamlToken> tokens = new List<YamlToken>(capacity: _file.PossibleTokenCount);
+        List<YamlToken> tokens = new List<YamlToken>(capacity: m_file.PossibleTokenCount);
         Span<char> buffer = stackalloc char[MAX_BUFFER_COUNT];
 
         int index = 0;
@@ -62,11 +57,11 @@ internal class YamlLexer: IDisposable {
         int multiStringOrder = -1;
         YamlLexerFlag flags = 0;
 
-        while (!this._file.EOS) {
+        while (!this.m_file.EOS) {
             if (index >= MAX_BUFFER_COUNT)
                 throw new IndexOutOfRangeException(message: $"The supported buffer length for one line is {MAX_BUFFER_COUNT} character.");
 
-            buffer[index++] = (char)_file.Read();
+            buffer[index++] = (char)m_file.Read();
             ++m_position.character;
 
             if ((flags & YamlLexerFlag.IS_START_OF_THE_LINE) == YamlLexerFlag.IS_START_OF_THE_LINE && buffer[index - 1] == WHITE_SPACE) {
@@ -101,7 +96,7 @@ internal class YamlLexer: IDisposable {
                         throw new YamlLexerException(msg: "The inline string value must have an enclosing tag.", m_position.line - 1, m_position.character);
 
                     if (buffer[index - 1] == NEW_LINE[0]) 
-                        _ = this._file.Read();
+                        _ = this.m_file.Read();
 
                     if (!buffer[..(index - 1)].SequenceEqual(other: [WHITE_SPACE]) && !buffer[..(index - 1)].SequenceEqual(other: string.Empty))
                         tokens.Add(new YamlToken(token: buffer[..(index - 1)].Trim().ToString(), type: YamlTokenType.Value, order));
@@ -121,8 +116,8 @@ internal class YamlLexer: IDisposable {
                 case '-':
                     if (IsString(order, ref flags, ref multiStringOrder)) continue;
 
-                    while (_file.Peek() == WHITE_SPACE) {
-                        _ = _file.Read();
+                    while (m_file.Peek() == WHITE_SPACE) {
+                        _ = m_file.Read();
                         ++order;
                     }
 
@@ -131,6 +126,11 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '|':
                 case '>':
+
+                    /* Ignore the trailing preserver "flag", because no has any reason of it. */
+                    char peek = (char)m_file.Peek();
+                    if(peek == '-' || peek == '+') _ = m_file.Read();
+
                     tokens.Add(new YamlToken(character: buffer[index - 1], YamlTokenType.MultilineStringIndicator, indentation: order));
                     flags |= YamlLexerFlag.IS_MULTILINE_STR;
                     index = 0;
@@ -145,10 +145,10 @@ internal class YamlLexer: IDisposable {
                         break;
                     }
                     
-                    if (((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (_file.Peek() == STRING_ENCLOSING_TAG_SINGLE_QUOTE || _file.Peek() == STRING_ENCLOSING_TAG_DOUBLE_QUOTE)) ||
-                         (_file.Peek() == STRING_ENCLOSING_TAG_DOUBLE_QUOTE || _file.Peek() == STRING_ENCLOSING_TAG_SINGLE_QUOTE)) {
+                    if (((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (m_file.Peek() == STRING_ENCLOSING_TAG_SINGLE_QUOTE || m_file.Peek() == STRING_ENCLOSING_TAG_DOUBLE_QUOTE)) ||
+                         (m_file.Peek() == STRING_ENCLOSING_TAG_DOUBLE_QUOTE || m_file.Peek() == STRING_ENCLOSING_TAG_SINGLE_QUOTE)) {
 
-                        _ = _file.Read();
+                        _ = m_file.Read();
                         break;
                     }
 
@@ -165,8 +165,8 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '[':
                 case ']':
-                    if(_file.Peek() == INLINE_COLLECTION_START_TOKEN || _file.Peek() == INLINE_COLLECTION_ENCLOSING_TOKEN) {
-                        _ = _file.Read();
+                    if(m_file.Peek() == INLINE_COLLECTION_START_TOKEN || m_file.Peek() == INLINE_COLLECTION_ENCLOSING_TOKEN) {
+                        _ = m_file.Read();
                         continue;
                     }
 
@@ -183,7 +183,7 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '#':
                     if((flags & YamlLexerFlag.IS_COMMENT_LINE) == YamlLexerFlag.IS_COMMENT_LINE && (tokens.Count == 0 || tokens[^1].Type == YamlTokenType.NewLine)) {
-                        _ = _file.ReadLine();
+                        _ = m_file.ReadLine();
                         index = 0;
 
                         if(tokens.Count > 0) {
