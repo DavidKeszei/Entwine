@@ -17,7 +17,6 @@ namespace Entwine;
 /// Helper class for serialize objects/values to YAML and vice-versa.
 /// </summary>
 public static class YAMLSerializer {
-
     /// <summary>
     /// Deserialize a YAML <see cref="string"/> to an object representation.
     /// </summary>
@@ -84,11 +83,11 @@ public static class YAMLSerializer {
                     count += 2;
                     break;
                 case YamlTokenType.InlineArrayIndicator:
-                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_ENCLOSING_TOKEN, prop: static (x) => x.Value[0], tokens[count..]);
+                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static (x) => x.Value[0], tokens[count..]);
                     int newlinePos = IndexOf<YamlToken, char>(searchItem: YamlLexer.NEW_LINE[1], prop: static (x) => x.Value[0], tokens[count..]);
 
                     if ((newlinePos < arrayEnd && newlinePos != -1) || arrayEnd == -1)
-                        throw new FormatException(message: "The inline array must have a enclosing10 character in the YAML file. (\']\')");
+                        throw new FormatException(message: "The inline array must have a enclosing character in the YAML file. (\']\')");
 
                     arrayEnd += count;
                     IEntity[] collectionOf = new YAMLValue[arrayEnd - ++count];
@@ -109,11 +108,11 @@ public static class YAMLSerializer {
                     int mStrEnd = FirstIndentationOf(tokens[count].Indentation, tokens[(count + 2)..]);
 
                     if (mStrEnd != -1) {
-                        obj.Write<string>(route: [], id, CreateMultilineString(tokens[(count + 2)..(count + 2 + mStrEnd)], saveNewlines: tokens[count].Value[0] != YamlLexer.FLOW_STR_TOKEN));
+                        obj.Write<string>(route: [], id, CreateMultilineString(tokens[(count + 2)..(count + 2 + mStrEnd)], saveNewlines: tokens[count].Value[0] != YamlLexer.STR_FLOW));
                         count += mStrEnd + 3;
                     }
                     else {
-                        obj.Write<string>(route: [], id, CreateMultilineString(tokens[(count + 2)..], saveNewlines: tokens[count].Value[0] != YamlLexer.FLOW_STR_TOKEN));
+                        obj.Write<string>(route: [], id, CreateMultilineString(tokens[(count + 2)..], saveNewlines: tokens[count].Value[0] != YamlLexer.STR_FLOW));
                         count = tokens.Length;
                     }
 
@@ -244,7 +243,7 @@ public static class YAMLSerializer {
                     isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
                     break;
                 case YamlTokenType.InlineArrayIndicator:
-                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_ENCLOSING_TOKEN, prop: static (x) => x.Value[0], tokens[index..]);
+                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static (x) => x.Value[0], tokens[index..]);
                     int newlinePos = IndexOf<YamlToken, char>(searchItem: YamlLexer.NEW_LINE[1], prop: static (x) => x.Value[0], tokens[index..]);
                 
                     if ((newlinePos < arrayEnd && newlinePos != -1) || arrayEnd == -1)
@@ -271,14 +270,14 @@ public static class YAMLSerializer {
                     YAMLValue multilineString = null!;
 
                     if (mStrEnd != -1) {
-                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..(index + 2 + mStrEnd)], saveNewlines: tokens[index].Value[0] != YamlLexer.FLOW_STR_TOKEN));
+                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..(index + 2 + mStrEnd)], saveNewlines: tokens[index].Value[0] != YamlLexer.STR_FLOW));
                         index += mStrEnd;
 
                         if(tokens[index + 2].Type == YamlTokenType.VerticalArrayIndicator) index += 2;
                         else index += 3;
                     }
                     else {
-                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..], saveNewlines: tokens[index].Value[0] != YamlLexer.FLOW_STR_TOKEN));
+                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..], saveNewlines: tokens[index].Value[0] != YamlLexer.STR_FLOW));
                         index = tokens.Length;
                     }
 
@@ -352,7 +351,7 @@ public static class YAMLSerializer {
     }
 
     private static bool IsCollectionObjectEntry(ReadOnlySpan<YamlToken> tokens) {
-        int vIndicator = IndexOf<YamlToken, char>(searchItem: YamlLexer.VERTICAL_COLLECTION_TOKEN, prop: static(x) => x.Value[0], tokens);
+        int vIndicator = IndexOf<YamlToken, char>(searchItem: YamlLexer.VERTICAL_COLLECTION, prop: static(x) => x.Value[0], tokens);
         if (vIndicator != -1) return vIndicator > 3;
         return tokens.Length > 5;
     }
@@ -360,10 +359,10 @@ public static class YAMLSerializer {
     private static void RecursivelySerialize(IEntity parent, StringBuilder builder, int indentation, bool parentIsCollection) {
         if(parent is IEmptiable empty && empty.IsEmpty) {
 
-            if(builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION_TOKEN)
+            if(builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION)
                 AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
 
-            builder.Append($"{(parentIsCollection ? YamlLexer.VERTICAL_COLLECTION_TOKEN : string.Empty)} {parent.Key}: ~");
+            builder.Append($"{(parentIsCollection ? YamlLexer.VERTICAL_COLLECTION : string.Empty)} {parent.Key}: ~");
             return;
         }
 
@@ -373,14 +372,14 @@ public static class YAMLSerializer {
         foreach (IEntity entity in (IEnumerable<IEntity>)parent) {
             if (entity is YAMLBase obj) {
 
-                if (builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION_TOKEN) 
+                if (builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION) 
                     AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
 
                 RecursivelySerialize(obj, builder, indentation + 1 + (parentIsCollection ? 1 : 0), parent.TypeOf == YAMLType.Collection);
                 continue;
             }
 
-            if(builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION_TOKEN) AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
+            if(builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION) AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
             AppendValue(builder, (YAMLValue)entity, indentation: indentation + 1 + (parentIsCollection ? 1 : 0), parentIsCollection: parent.TypeOf == YAMLType.Collection);
         }
     }
@@ -392,16 +391,14 @@ public static class YAMLSerializer {
         if(str.Contains<char>(value: YamlLexer.NEW_LINE[1]) || str.Length >= YamlLexer.MAX_BUFFER_COUNT) {
 
             bool isContainsNewLine = str.Contains<char>(value: YamlLexer.NEW_LINE[1]);
-            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION_TOKEN} " : string.Empty)}{value.Key}: {(isContainsNewLine ? YamlLexer.MULTILINE_STR_TOKEN : YamlLexer.FLOW_STR_TOKEN)}\n");
+            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION} " : string.Empty)}{value.Key}: {(isContainsNewLine ? YamlLexer.STR_MULTILINE : YamlLexer.STR_FLOW)}\n");
 
             AppendIndentation(builder, indentation + 2);
 
             for(int i = 0; i < str.Length; ++i) {
-                if(str[i] == YamlLexer.NEW_LINE[1] || (str.Length % YamlLexer.MAX_BUFFER_COUNT == 0 && i != 0)) {
+                if(str[i] == YamlLexer.NEW_LINE[1] || (i % YamlLexer.MAX_BUFFER_COUNT == 0 && i != 0)) {
                     builder.Append(value: YamlLexer.NEW_LINE[1]);
-                    
-                    if(str.Length - 1 != i) AppendIndentation(builder, indentation + 2);
-                    continue;
+                    AppendIndentation(builder, indentation + 2);
                 }
 
                 builder.Append(value: str[i]);
@@ -413,7 +410,7 @@ public static class YAMLSerializer {
             return;
         }
 
-        builder.Append($"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION_TOKEN} " : string.Empty)}{value}{YamlLexer.NEW_LINE[1]}");
+        builder.Append($"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION} " : string.Empty)}{value}{YamlLexer.NEW_LINE[1]}");
     }
 
     private static void AppendIndentation(StringBuilder builder, int count) {

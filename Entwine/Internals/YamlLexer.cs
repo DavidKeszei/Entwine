@@ -14,22 +14,22 @@ namespace Entwine;
 internal class YamlLexer: IDisposable {
 
     #region CONSTANTS
-    internal const int MAX_BUFFER_COUNT = 4096;
+    internal const int MAX_BUFFER_COUNT = (1 << 12);
 
-    internal const char STRING_ENCLOSING_TAG_DOUBLE_QUOTE = '\"';
-    internal const char STRING_ENCLOSING_TAG_SINGLE_QUOTE = '\'';
+    internal const char STR_DOUBLE_QUOTE = '\"';
+    internal const char STR_SINGLE_QUOTE = '\'';
 
-    internal const char ASSING_OPERATOR_TOKEN = ':';
-    internal const char FLOW_STR_TOKEN = '>';
+    internal const char ASSING = ':';
+    internal const char STR_FLOW = '>';
 
-    internal const char MULTILINE_STR_TOKEN = '|';
-    internal const char VERTICAL_COLLECTION_TOKEN = '-';
+    internal const char STR_MULTILINE = '|';
+    internal const char VERTICAL_COLLECTION = '-';
 
-    internal const char COMMENT_LINE_TOKEN = '#';
+    internal const char COMMENT = '#';
     internal const char WHITE_SPACE = ' ';
 
-    internal const char INLINE_COLLECTION_START_TOKEN = '[';
-    internal const char INLINE_COLLECTION_ENCLOSING_TOKEN = ']';
+    internal const char INLINE_COLLECTION_START = '[';
+    internal const char INLINE_COLLECTION_END = ']';
 
     internal const string NEW_LINE = "\r\n";
     #endregion
@@ -73,7 +73,7 @@ internal class YamlLexer: IDisposable {
             else {
                 flags &= ~YamlLexerFlag.IS_START_OF_THE_LINE;
 
-                if(buffer[0] == COMMENT_LINE_TOKEN) 
+                if(buffer[0] == COMMENT) 
                     flags |= YamlLexerFlag.IS_COMMENT_LINE;
             }
 
@@ -82,10 +82,10 @@ internal class YamlLexer: IDisposable {
 
             switch (buffer[index - 1]) {
                 case ':':
-                    if (IsString(order, ref flags, ref multiStringOrder)) continue;
+                    if (IsString(order, ref flags, ref multiStringOrder)) break;
 
                     tokens.Add(new YamlToken(token: buffer[..(index - 1)].Trim().ToString(), YamlTokenType.Identifier, order));
-                    tokens.Add(new YamlToken(character: ASSING_OPERATOR_TOKEN, YamlTokenType.Assign, order));
+                    tokens.Add(new YamlToken(character: ASSING, YamlTokenType.Assign, order));
 
                     index = 0;
                     flags |= YamlLexerFlag.ASSIGN_CHARACTER_IS_REACHED;
@@ -93,7 +93,7 @@ internal class YamlLexer: IDisposable {
                 case '\n':
                 case '\r':
                     if((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (flags & YamlLexerFlag.IS_MULTILINE_STR) != YamlLexerFlag.IS_MULTILINE_STR)
-                        throw new YamlLexerException(msg: "The inline string value must have an enclosing tag.", m_position.line - 1, m_position.character);
+                        throw new YamlLexerException(msg: "The inline string value must have an enclosing tag.", line: m_position.line, character: m_position.character);
 
                     if (buffer[index - 1] == NEW_LINE[0]) 
                         _ = this.m_file.Read();
@@ -114,20 +114,21 @@ internal class YamlLexer: IDisposable {
                     m_position.character = 0;
                     break;
                 case '-':
-                    if (IsString(order, ref flags, ref multiStringOrder)) continue;
+                    if (IsString(order, ref flags, ref multiStringOrder)) break;
 
                     while (m_file.Peek() == WHITE_SPACE) {
                         _ = m_file.Read();
                         ++order;
                     }
 
-                    tokens.Add(new YamlToken(character: VERTICAL_COLLECTION_TOKEN, type: YamlTokenType.VerticalArrayIndicator, ++order));
+                    tokens.Add(new YamlToken(character: VERTICAL_COLLECTION, type: YamlTokenType.VerticalArrayIndicator, ++order));
                     index = 0;
                     break;
                 case '|':
                 case '>':
+                    if (IsString(order, ref flags, ref multiStringOrder))
+                        continue;
 
-                    /* Ignore the trailing preserver "flag", because no has any reason of it. */
                     char peek = (char)m_file.Peek();
                     if(peek == '-' || peek == '+') _ = m_file.Read();
 
@@ -144,15 +145,13 @@ internal class YamlLexer: IDisposable {
                         --index;
                         break;
                     }
-                    
-                    if (((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (m_file.Peek() == STRING_ENCLOSING_TAG_SINGLE_QUOTE || m_file.Peek() == STRING_ENCLOSING_TAG_DOUBLE_QUOTE)) ||
-                         (m_file.Peek() == STRING_ENCLOSING_TAG_DOUBLE_QUOTE || m_file.Peek() == STRING_ENCLOSING_TAG_SINGLE_QUOTE)) {
-
-                        _ = m_file.Read();
-                        break;
-                    }
 
                     if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR) {
+                        if (m_file.Peek() == STR_DOUBLE_QUOTE || m_file.Peek() == STR_SINGLE_QUOTE) {
+                            _ = (char)m_file.Read();
+                            break;
+                        }
+
                         flags &= ~YamlLexerFlag.IS_STR;
                         tokens.Add(new YamlToken(token: buffer[..(index - 1)].Trim().ToString(), type: YamlTokenType.Value, order));
                     }
@@ -165,13 +164,10 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '[':
                 case ']':
-                    if(m_file.Peek() == INLINE_COLLECTION_START_TOKEN || m_file.Peek() == INLINE_COLLECTION_ENCLOSING_TOKEN) {
-                        _ = m_file.Read();
-                        continue;
-                    }
+                    if((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR || (flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR) break;
 
                     if ((flags & YamlLexerFlag.IS_INLINE_COLLECTION) != YamlLexerFlag.IS_INLINE_COLLECTION) {
-                        tokens.Add(new YamlToken(character: INLINE_COLLECTION_START_TOKEN, type: YamlTokenType.InlineArrayIndicator, order));
+                        tokens.Add(new YamlToken(character: INLINE_COLLECTION_START, type: YamlTokenType.InlineArrayIndicator, order));
                         flags |= YamlLexerFlag.IS_INLINE_COLLECTION;
                     }
                     else {
@@ -199,6 +195,9 @@ internal class YamlLexer: IDisposable {
             }
         }
 
+        if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (flags & YamlLexerFlag.IS_MULTILINE_STR) != YamlLexerFlag.IS_MULTILINE_STR)
+            throw new YamlLexerException(msg: "The inline string value must have an enclosing tag.", line: m_position.line, character: m_position.character);
+
         if (index != 0)
             tokens.Add(new YamlToken(token: buffer[..index].ToString().Trim(), type: YamlTokenType.Value, order));
 
@@ -206,6 +205,7 @@ internal class YamlLexer: IDisposable {
     }
 
     private bool IsString(int order, ref YamlLexerFlag flags, ref int multiStringOrder) {
+        /* Unset multiline-string flags if indentation is changed. */
         if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR && order != multiStringOrder && multiStringOrder != -1) {
             flags &= ~YamlLexerFlag.IS_MULTILINE_STR;
 
@@ -223,7 +223,7 @@ internal class YamlLexer: IDisposable {
     }
 
     private void ParseCollection(List<YamlToken> tokens, int order, ReadOnlySpan<char> buff) {
-        ReadOnlySpan<char> trimChars = stackalloc char[3] { WHITE_SPACE, STRING_ENCLOSING_TAG_DOUBLE_QUOTE, STRING_ENCLOSING_TAG_SINGLE_QUOTE };
+        ReadOnlySpan<char> trimChars = stackalloc char[3] { WHITE_SPACE, STR_DOUBLE_QUOTE, STR_SINGLE_QUOTE };
         int start = 0;
 
         for (int i = 0; i < buff.Length; ++i) {
@@ -243,7 +243,7 @@ internal class YamlLexer: IDisposable {
         if (buff[start..].Length != 0)
             tokens.Add(new YamlToken(buff[start..].Trim(trimChars).ToString(), YamlTokenType.Value, order));
 
-        tokens.Add(new YamlToken(character: INLINE_COLLECTION_ENCLOSING_TOKEN, type: YamlTokenType.InlineArrayIndicator, indentation: order));
+        tokens.Add(new YamlToken(character: INLINE_COLLECTION_END, type: YamlTokenType.InlineArrayIndicator, indentation: order));
     }
 
     [Flags]

@@ -92,9 +92,10 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
 
     public void Write<T>(ReadOnlySpan<string> route, string key, T value, string format = null!, IFormatProvider provider = null!) {
         IEntity target = route.IsEmpty ? this : this.Read<YAMLBase>(route)!;
+        key = key.TrimStart(trimChar: YamlLexer.COMMENT);
 
-        if (key == null || key == string.Empty) key = YAMLBase.KEYLESS;
-        key = key.TrimStart(trimChar: YamlLexer.COMMENT_LINE_TOKEN);
+        if (key == null || key == string.Empty) 
+            key = YAMLBase.KEYLESS;
 
         IEntity? field = value switch {
             IEntity => Unsafe.As<T, IEntity>(ref value),
@@ -105,7 +106,8 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
             string => new YAMLValue(key, value: Unsafe.As<T, string>(ref value) == string.Empty ? "~" : Unsafe.As<T, string>(ref value)),
             bool => new YAMLValue(key, value: $"{Unsafe.As<T, bool>(ref value)}"),
 
-            _ => throw new ArgumentException(message: $"The {nameof(value)} must be valid value. (See the function docs)")
+            null => new YAMLValue(key, value: null!),
+            _ => throw new ArgumentException(message: $"The {nameof(value)} must be valid value. (See the documentation)")
         };
 
         if(target is YAMLBase @base) @base.Create(entity: field);

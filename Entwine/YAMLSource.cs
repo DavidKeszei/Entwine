@@ -104,7 +104,7 @@ public struct YAMLSource: IDisposable {
             int delimiterCount = 0;
 
             for (int i = 0; i < _str.Length; ++i) {
-                if (_str[i] == YamlLexer.ASSING_OPERATOR_TOKEN)
+                if (_str[i] == YamlLexer.ASSING)
                     ++delimiterCount;
             }
 
