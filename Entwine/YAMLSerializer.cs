@@ -243,8 +243,8 @@ public static class YAMLSerializer {
                     isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
                     break;
                 case YamlTokenType.InlineArrayIndicator:
-                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static (x) => x.Value[0], tokens[index..]);
-                    int newlinePos = IndexOf<YamlToken, char>(searchItem: YamlLexer.NEW_LINE[1], prop: static (x) => x.Value[0], tokens[index..]);
+                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static(x) => x.Value[0], tokens[index..]);
+                    int newlinePos = IndexOf<YamlToken, char>(searchItem: YamlLexer.NEW_LINE[1], prop: static(x) => x.Value[0], tokens[index..]);
                 
                     if ((newlinePos < arrayEnd && newlinePos != -1) || arrayEnd == -1)
                         throw new FormatException(message: "The inline array must have a closer character in the YAML file. (\']\')");
