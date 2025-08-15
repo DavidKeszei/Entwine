@@ -17,6 +17,8 @@ namespace Entwine;
 /// Helper class for serialize objects/values to YAML and vice-versa.
 /// </summary>
 public static class YAMLSerializer {
+    private const int MAX_COLLECTION_ENTRY_TOKEN_COUNT_BY_LINE = 5;
+
     /// <summary>
     /// Deserialize a YAML <see cref="string"/> to an object representation.
     /// </summary>
@@ -41,9 +43,10 @@ public static class YAMLSerializer {
     /// <exception cref="YamlLexerException"/>
     public static async Task<IReadableEntity> Deserialize(YAMLSource source) {
         using YamlLexer lexer = new YamlLexer(source);
-
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
         YAMLObject obj = new YAMLObject(key: YAMLBase.ROOT);
+
+        if(tokens.IsEmpty) return obj;
 
         int count = 1;
         string id = null!;
@@ -351,9 +354,12 @@ public static class YAMLSerializer {
     }
 
     private static bool IsCollectionObjectEntry(ReadOnlySpan<YamlToken> tokens) {
-        int vIndicator = IndexOf<YamlToken, char>(searchItem: YamlLexer.VERTICAL_COLLECTION, prop: static(x) => x.Value[0], tokens);
-        if (vIndicator != -1) return vIndicator > 3;
-        return tokens.Length > 5;
+        int verticalIndicatorPosition = IndexOf<YamlToken, char>(searchItem: YamlLexer.VERTICAL_COLLECTION, prop: static(x) => x.Value[0], tokens);
+
+        if (verticalIndicatorPosition != -1) 
+            return verticalIndicatorPosition > MAX_COLLECTION_ENTRY_TOKEN_COUNT_BY_LINE;
+
+        return tokens.Length > MAX_COLLECTION_ENTRY_TOKEN_COUNT_BY_LINE;
     }
 
     private static void RecursivelySerialize(IEntity parent, StringBuilder builder, int indentation, bool parentIsCollection) {
@@ -366,7 +372,7 @@ public static class YAMLSerializer {
             return;
         }
 
-        if (parentIsCollection) builder.Append("- ");
+        if (parentIsCollection) builder.Append($"{YamlLexer.VERTICAL_COLLECTION} ");
         if (parent.Key != YAMLBase.KEYLESS) builder.Append($"{parent.Key}:{YamlLexer.NEW_LINE[1]}");
 
         foreach (IEntity entity in (IEnumerable<IEntity>)parent) {
@@ -404,9 +410,7 @@ public static class YAMLSerializer {
                 builder.Append(value: str[i]);
             }
 
-            if(str[^1] != YamlLexer.NEW_LINE[1])
-                builder.Append(value: YamlLexer.NEW_LINE[1]);
-
+            if(str[^1] != YamlLexer.NEW_LINE[1]) builder.Append(value: YamlLexer.NEW_LINE[1]);
             return;
         }
 

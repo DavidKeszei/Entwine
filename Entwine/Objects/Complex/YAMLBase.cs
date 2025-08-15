@@ -16,12 +16,12 @@ namespace Entwine.Objects;
 /// </summary>
 public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, IClearable {
     /// <summary>
-    /// Root identifier for root object in the YAML graph.
+    /// Root identifier for root object in the YAML document.
     /// </summary>
     public const string ROOT = "<root>";
 
     /// <summary>
-    /// Keyless identifier for keyless <see cref="YAMLBase"/> instances.
+    /// Keyless identifier for keyless <see cref="IEntity"/> instances.
     /// </summary>
     public const string KEYLESS = "<no key>";
 

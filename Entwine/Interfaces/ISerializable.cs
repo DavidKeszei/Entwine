@@ -12,13 +12,13 @@ namespace Entwine;
 public interface ISerializable {
 
     /// <summary>
-    /// [Serialization] Setting up the <see cref="YAMLObject"/> <paramref name="obj"/> properties from the current object.
+    /// [Serialization] Setting up the <see cref="IWriteableEntity"/> <paramref name="obj"/> properties from the current object.
     /// </summary>
     /// <param name="obj">Result object reference of YAML representation.</param>
     public void ToYAML(in IWriteableEntity obj);
 
     /// <summary>
-    /// [Deserialization] Setting up the current object properties from the <see cref="YAMLObject"/> object.
+    /// [Deserialization] Setting up the current object properties from the <see cref="IReadableEntity"/> object.
     /// </summary>
     /// <param name="obj">YAML representation of the object.</param>
     public void FromYAML(in IReadableEntity obj);

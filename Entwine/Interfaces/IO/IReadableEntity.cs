@@ -27,8 +27,9 @@ public interface IReadableEntity {
     /// </summary>
     /// <typeparam name="T">Return type of the primitive value.</typeparam>
     /// <param name="route">Access route/Keys of the value inside the <see cref="YAMLBase"/>.</param>
+    /// <param name="onError">This value is represented, if the value entry is not exists or can't be converted to <typeparamref name="T"/>.</param>
     /// <param name="provider">Current culture of the environment.</param>
-    /// <returns>Return a(n) <typeparamref name="T"/> instance. If type is incorrect, then return <see langword="null"/>.</returns>
+    /// <returns>Return a(n) <typeparamref name="T"/> instance. If type is incorrect, then return value of the <paramref name="onError"/> argument.</returns>
     /// <exception cref="AccessViolationException"/>
     /// <exception cref="ArgumentException"/>
     public T Read<T>(ReadOnlySpan<string> route, T onError = default!, IFormatProvider provider = null!) where T: IParsable<T>;

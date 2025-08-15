@@ -89,7 +89,7 @@ internal class YamlLexer: IDisposable {
 
             switch (buffer[index - 1]) {
                 case ':':
-                    if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR || (flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR) 
+                    if (IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION)
                         break;
 
                     tokens.Add(new YamlToken(token: buffer[..(index - 1)].Trim().ToString(), YamlTokenType.Identifier, indentation));
@@ -121,6 +121,8 @@ internal class YamlLexer: IDisposable {
                     m_position.character = 0;
                     break;
                 case '-':
+                    if(IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
+
                     while (m_file.Peek() == WHITE_SPACE) {
                         _ = m_file.Read();
                         ++indentation;
@@ -131,7 +133,7 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '|':
                 case '>':
-                    if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR) break;
+                    if (IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
 
                     char peek = (char)m_file.Peek();
                     if(peek == '-' || peek == '+') _ = m_file.Read();
@@ -142,11 +144,8 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '\'':
                 case '\"':
-                    if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR) break;
-                    if ((flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) {
-                        --index;
-                        break;
-                    }
+                    if ((flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR ||
+                        (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
 
                     if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && buffer[index - 1] == stringIndicatorTag) {
                         if (m_file.Peek() == STR_DOUBLE_QUOTE || m_file.Peek() == STR_SINGLE_QUOTE) {
@@ -169,7 +168,7 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '[':
                 case ']':
-                    if((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR || (flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR) break;
+                    if(IsString(flags)) break;
 
                     if ((flags & YamlLexerFlag.IS_INLINE_COLLECTION) != YamlLexerFlag.IS_INLINE_COLLECTION) {
                         tokens.Add(new YamlToken(character: INLINE_COLLECTION_START, type: YamlTokenType.InlineArrayIndicator, indentation));
@@ -183,19 +182,37 @@ internal class YamlLexer: IDisposable {
                     index = 0;
                     break;
                 case '#':
-                    if((flags & YamlLexerFlag.IS_COMMENT_LINE) == YamlLexerFlag.IS_COMMENT_LINE && (tokens.Count == 0 || tokens[^1].Type == YamlTokenType.NewLine)) {
-                        _ = m_file.ReadLine();
-                        index = 0;
+                    if(IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
 
-                        if(tokens.Count > 0) {
-                            for(int i = tokens.Count - 1; tokens[i].Type != YamlTokenType.NewLine; --i)
-                                _ = tokens.Remove(tokens[i]);
+                    if((flags & YamlLexerFlag.ASSIGN_CHARACTER_IS_REACHED) == YamlLexerFlag.ASSIGN_CHARACTER_IS_REACHED) {
 
-                            flags = 0;
-                        }
-
-                        ++m_position.line;
+                        if(tokens[^1].Type == YamlTokenType.Assign) 
+                            tokens.Add(item: new YamlToken(token: "~", type: YamlTokenType.Value, indentation));
                     }
+                    else {
+                        for(int i = tokens.Count - 1; tokens.Count != 0 && tokens[i].Type != YamlTokenType.NewLine; --i)
+                            _ = tokens.Remove(tokens[i]);
+
+                        flags = 0;
+                    }
+
+                    _ = m_file.ReadLine();
+                    ++m_position.line;
+
+                    index = 0;
+                    flags &= ~YamlLexerFlag.IS_COMMENT_LINE;
+                    break;
+
+                /* 
+                 * For now, the type tag isn't add more info to parsing, because the YAMLValue.Read<T>() function is generic.
+                 * Result:
+                 *    We just skip them, like the comments. (But check for future)
+                 */
+                case '!':
+                    if(IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
+
+                    --index;
+                    while(m_file.Read() != WHITE_SPACE);
                     break;
             }
         }
@@ -203,17 +220,19 @@ internal class YamlLexer: IDisposable {
         if ((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (flags & YamlLexerFlag.IS_MULTILINE_STR) != YamlLexerFlag.IS_MULTILINE_STR)
             throw new YamlLexerException(msg: "The inline string value must have an enclosing tag.", line: m_position.line, character: m_position.character);
 
-        if (index != 0) tokens.Add(new YamlToken(token: buffer[..index].ToString().Trim(), type: YamlTokenType.Value, indentation));
+        if (index != 0) tokens.Add(new YamlToken(token: buffer[..index].Trim().ToString(), type: YamlTokenType.Value, indentation));
         return Task.FromResult<List<YamlToken>>(result: tokens);
     }
 
-    private void ParseCollection(List<YamlToken> tokens, int order, ReadOnlySpan<char> buff) {
-        ReadOnlySpan<char> trimChars = stackalloc char[3] { WHITE_SPACE, STR_DOUBLE_QUOTE, STR_SINGLE_QUOTE };
+    private void ParseCollection(List<YamlToken> tokens, int indentation, ReadOnlySpan<char> buff) {
         int start = 0;
 
         for (int i = 0; i < buff.Length; ++i) {
             if (buff[i] == ',') {
-                ReadOnlySpan<char> trim = buff[start..i].Trim(trimChars);
+                ReadOnlySpan<char> trim = buff[start..i].Trim(trimChar: WHITE_SPACE);
+
+                if((trim[0] == STR_SINGLE_QUOTE && trim[^1] == STR_SINGLE_QUOTE) || (trim[0] == STR_DOUBLE_QUOTE && trim[^1] == STR_DOUBLE_QUOTE))
+                    trim = trim[1..^1];
 
                 if(trim.IsEmpty)
                     throw new YamlLexerException(msg: $"A collection entry must declared somehow in the collection with a value or NULL.", 
@@ -221,16 +240,25 @@ internal class YamlLexer: IDisposable {
                                                  character: m_position.character
                     );
 
-                tokens.Add(new YamlToken(token: trim.ToString(), type: YamlTokenType.Value, indentation: order));
+                tokens.Add(new YamlToken(token: trim.ToString(), type: YamlTokenType.Value, indentation: indentation));
                 start = i + 1;
             }
         }
 
-        if (buff[start..].Length != 0)
-            tokens.Add(new YamlToken(buff[start..].Trim(trimChars).ToString(), YamlTokenType.Value, order));
+        buff = buff[start..].Trim();
 
-        tokens.Add(new YamlToken(character: INLINE_COLLECTION_END, type: YamlTokenType.InlineArrayIndicator, indentation: order));
+        if (buff.Length != 0) {
+            if((buff[0] == STR_SINGLE_QUOTE && buff[^1] == STR_SINGLE_QUOTE) || (buff[0] == STR_DOUBLE_QUOTE && buff[^1] == STR_DOUBLE_QUOTE))
+                buff = buff[1..^1];
+
+            tokens.Add(new YamlToken(buff.ToString(), YamlTokenType.Value, indentation));
+        }
+
+        tokens.Add(new YamlToken(character: INLINE_COLLECTION_END, type: YamlTokenType.InlineArrayIndicator, indentation: indentation));
     }
+
+    private bool IsString(YamlLexerFlag flags) 
+        => (flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR || (flags & YamlLexerFlag.IS_MULTILINE_STR) == YamlLexerFlag.IS_MULTILINE_STR;
 
     [Flags]
     private enum YamlLexerFlag: int {
