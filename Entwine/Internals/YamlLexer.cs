@@ -100,6 +100,8 @@ internal class YamlLexer: IDisposable {
                     break;
                 case '\n':
                 case '\r':
+                    if((flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
+
                     if((flags & YamlLexerFlag.IS_STR) == YamlLexerFlag.IS_STR && (flags & YamlLexerFlag.IS_MULTILINE_STR) != YamlLexerFlag.IS_MULTILINE_STR)
                         throw new YamlLexerException(msg: "The inline string value must have an closer tag.", line: m_position.line, character: m_position.character);
 
@@ -154,6 +156,8 @@ internal class YamlLexer: IDisposable {
                         }
 
                         flags &= ~YamlLexerFlag.IS_STR;
+                        stringIndicatorTag = '\0';
+
                         tokens.Add(new YamlToken(token: buffer[..(index - 1)].Trim().ToString(), type: YamlTokenType.Value, indentation));
                     }
                     else {
@@ -202,11 +206,28 @@ internal class YamlLexer: IDisposable {
                     index = 0;
                     flags &= ~YamlLexerFlag.IS_COMMENT_LINE;
                     break;
+                case '{':
+                case '}':
+                case ',':
+                    if(IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION)
+                        break;
 
+                    tokens.Add(item: new YamlToken(character: '\n', type: YamlTokenType.NewLine, indentation));
+                    index = 0;
+
+                    index = 0;
+                    indentation = 0;
+
+                    flags |= YamlLexerFlag.IS_START_OF_THE_LINE;
+                    flags &= ~YamlLexerFlag.ASSIGN_CHARACTER_IS_REACHED;
+
+                    ++m_position.line;
+                    m_position.character = 0;
+                    break;
                 /* 
                  * For now, the type tag isn't add more info to parsing, because the YAMLValue.Read<T>() function is generic.
                  * Result:
-                 *    We just skip them, like the comments. (But check for future)
+                 *    We just skip them, like the comments.
                  */
                 case '!':
                     if(IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
@@ -227,9 +248,11 @@ internal class YamlLexer: IDisposable {
     private void ParseCollection(List<YamlToken> tokens, int indentation, ReadOnlySpan<char> buff) {
         int start = 0;
 
-        for (int i = 0; i < buff.Length; ++i) {
+        for (int i = 0; i < buff.Length - 1; ++i) {
+            if(buff[i..(i + 2)] == Environment.NewLine) continue;
+
             if (buff[i] == ',') {
-                ReadOnlySpan<char> trim = buff[start..i].Trim(trimChar: WHITE_SPACE);
+                ReadOnlySpan<char> trim = buff[start..i].Trim(trimChars: Environment.NewLine).Trim(trimChar: WHITE_SPACE);
 
                 if((trim[0] == STR_SINGLE_QUOTE && trim[^1] == STR_SINGLE_QUOTE) || (trim[0] == STR_DOUBLE_QUOTE && trim[^1] == STR_DOUBLE_QUOTE))
                     trim = trim[1..^1];
