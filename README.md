@@ -22,12 +22,12 @@ string yaml =
     """
     # This is incorrect for a number. If you specify a custom default value, then you get that in this case!
     version: f11
-    lastUpdate: 2025-07-14
+    lastUpdate: !!dateonly 2025-07-14
     dependencies:
 
         # Implicit object declaration in a vertical collection for an item.
-        - name: PowerToys
-          publisher: Microsoft
+        - name: !!str PowerToys
+          publisher: !!str Microsoft
           version: [0.92]
           desc: |
             Provides ultimate help in your .NET development pipeline!
