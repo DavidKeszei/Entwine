@@ -1,7 +1,7 @@
 ﻿namespace Entwine;
 
 /// <summary>
-/// Collection of possible YAML primitives.
+/// Collection of possible YAML lexical units.
 /// </summary>
 internal enum YamlTokenType: byte {
     /// <summary>

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -83,7 +84,7 @@ public class YAMLObject: YAMLBase, IEmptiable, IEnumerable<IEntity>, ICopyable<Y
         return copy;
     }
 
-    protected override IEntity Resolve(string key) => this.m_entities[key];
+    protected override IEntity Resolve([NotNull] string key) => this.m_entities[key];
 
     protected override void Create(IEntity entity) {
         if (entity.Key == YAMLBase.KEYLESS) 

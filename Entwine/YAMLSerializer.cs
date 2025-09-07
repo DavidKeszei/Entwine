@@ -17,6 +17,21 @@ namespace Entwine;
 /// Helper class for serialize objects/values to YAML and vice-versa.
 /// </summary>
 public static class YAMLSerializer {
+    /// <summary>
+    /// Error message if the vertical collection indicator (-) is inside a key or value without indicates as string.
+    /// </summary>
+    private const string ERR_MSG_VERTICAL = 
+        """
+        Not allowed use any reserved character in keys & values. If you want use these in keys & values, then indicates these with '\'' or '\"' as string.
+
+        [Good] 
+        'bg-service-name': "common-service"
+
+        [Bad]
+        bg-service-name: common-service
+
+        """;
+
     private const int MAX_COLLECTION_ENTRY_TOKEN_COUNT_BY_LINE = 5;
 
     /// <summary>
@@ -35,7 +50,7 @@ public static class YAMLSerializer {
     }
 
     /// <summary>
-    /// Deserialize an YAML <see cref="string"/> to an <see cref="IReadableEntity"/> representation.
+    /// Deserialize an <see cref="YAMLSource"/> to an <see cref="IReadableEntity"/> representation.
     /// </summary>
     /// <param name="source">The YAML string.</param>
     /// <returns>Return an <see cref="IReadableEntity"/> instance.</returns>
@@ -43,6 +58,7 @@ public static class YAMLSerializer {
     /// <exception cref="YamlLexerException"/>
     public static async Task<IReadableEntity> Deserialize(YAMLSource source) {
         using YamlLexer lexer = new YamlLexer(source);
+
         ReadOnlySpan<YamlToken> tokens = CollectionsMarshal.AsSpan(list: await lexer.CreateTokens());
         YAMLObject obj = new YAMLObject(key: YAMLBase.ROOT);
 
@@ -53,6 +69,9 @@ public static class YAMLSerializer {
 
         if (tokens[0].Type == YamlTokenType.NewLine)
             tokens = tokens[1..];
+
+        if(tokens[0].Type == YamlTokenType.VerticalArrayIndicator)
+            throw new FormatException(message: ERR_MSG_VERTICAL);
 
         while (tokens.Length > count) {
             switch (tokens[count].Type) {
@@ -103,6 +122,7 @@ public static class YAMLSerializer {
 
                     count = arrayEnd + 1;
                     break;
+
                 case YamlTokenType.StringLiteralIndicator:
                     ++count;
                     break;
@@ -157,6 +177,7 @@ public static class YAMLSerializer {
     /// <param name="entity">The entity, which holds the data.</param>
     public static Task<string> Serialize(IEntity entity) {
         StringBuilder builder = new StringBuilder();
+
         if (entity is not IReadableEntity)
             return Task.FromResult<string>(result: $"{entity}");
 
@@ -181,20 +202,20 @@ public static class YAMLSerializer {
         collection.Key = key;
 
         /* Current entity is a vertical collection or not? */
-        bool isCollection = tokens[0].Type == YamlTokenType.VerticalArrayIndicator;
+        bool isVCollection = tokens[0].Type == YamlTokenType.VerticalArrayIndicator;
         string id = null!;
 
         /*
          Examples:
              ↱ This must be presented in tokens. (Vertical Collection Indicator)
-            [-]["][Entry]["]  OR  [-][name][:]["][Entry]["] => In this scenario must be start with 2
+            [-]["][Entry]["]  OR  [-][name][:]["][Entry]["] => In this scenario must be start with 2 (Add more info the ASSING & VALUE case)
              0  1    2    3        0    1   2  3    4    5
 
-            [name][:]["][Entry]["]  => In this scenario must be start with 1 (When not token range is not a vertical collection)
-               0   1   2   3    4 
+            [name][:]["][Entry]["]  => In this scenario must be start with 1 (When the tokens is not a vCollection)
+               0   1  2    3    4 
         */
-        int index = isCollection && tokens.Length > 2 && 
-                    (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Assign) ? 2 : 1;
+        int index = isVCollection && tokens.Length > 2 && 
+                   (tokens[1].Type == YamlTokenType.StringLiteralIndicator || tokens[2].Type == YamlTokenType.Assign) ? 2 : 1;
 
         /* Indicates the current entry is a object or just a primitive value inside in a collection */
         bool isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
@@ -235,6 +256,9 @@ public static class YAMLSerializer {
 
                     break;
                 case YamlTokenType.VerticalArrayIndicator:
+                    if(tokens[index].Type != YamlTokenType.NewLine)
+                        throw new FormatException(message: ERR_MSG_VERTICAL);
+
                     if (isCollectionObjectEntry) {
                         obj.Key = YAMLBase.KEYLESS;
 
@@ -260,7 +284,7 @@ public static class YAMLSerializer {
 
                     IEntity _collection = (IEntity)new YAMLCollection(id, collectionOf);
 
-                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: _collection);
+                    if (isVCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: _collection);
                     else obj.Write<IEntity>(route: [], id, _collection);
 
                     index = arrayEnd + 1;
@@ -284,13 +308,13 @@ public static class YAMLSerializer {
                         index = tokens.Length;
                     }
 
-                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: multilineString);
+                    if (isVCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: multilineString);
                     else obj.Write<IEntity>(route: [], key: id, value: multilineString);
 
                     id = null!;
                     break;
                 case YamlTokenType.Value:
-                    if (isCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? YAMLBase.KEYLESS, value: tokens[index].Value));
+                    if (isVCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? YAMLBase.KEYLESS, value: tokens[index].Value));
                     else obj.Write<string>(route: [], id ?? YAMLBase.KEYLESS, tokens[index].Value);
 
                     id = null!;
@@ -299,7 +323,7 @@ public static class YAMLSerializer {
             }
         }
 
-        if (isCollection) {
+        if (isVCollection) {
             if (!obj.IsEmpty) {
                 if(obj.Key == collection.Key) obj.Key = YAMLBase.KEYLESS;
                 collection.InternalCollection.Add(item: obj.AsCopy());

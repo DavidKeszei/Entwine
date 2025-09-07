@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -16,7 +17,7 @@ namespace Entwine.Objects;
 /// </summary>
 public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, IClearable {
     /// <summary>
-    /// Root identifier for root object in the YAML document.
+    /// Root identifier for the root object in the YAML document.
     /// </summary>
     public const string ROOT = "<root>";
 
@@ -94,8 +95,11 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
         IEntity target = route.IsEmpty ? this : this.Read<YAMLBase>(route)!;
         key = key.TrimStart(trimChar: YamlLexer.COMMENT);
 
-        if (key == null || key == string.Empty) 
+        if (key == null || key == string.Empty) {
             key = YAMLBase.KEYLESS;
+        }
+
+        CheckReservedChr(buffer: key.AsSpan());
 
         IEntity? field = value switch {
             IEntity => Unsafe.As<T, IEntity>(ref value),
@@ -110,7 +114,8 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
             _ => throw new ArgumentException(message: $"The {nameof(value)} must be valid value. (See the documentation)")
         };
 
-        if(target is YAMLBase @base) @base.Create(entity: field);
+        if(target is YAMLBase @base) 
+            @base.Create(entity: field);
     }
 
     public void WriteRange<T>(ReadOnlySpan<string> route, List<(string Key, T Value)> list, string format = null!, IFormatProvider provider = null!) {
@@ -123,10 +128,10 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
     public abstract void Clear();
 
     /// <summary>
-    /// Resolve an <see cref="IEntity"/> instance independently from the storage of the <see cref="IEntity"/> instances inside the child class.
+    /// Resolve an <see cref="IEntity"/> instance independently from the underlying save data-structure.
     /// </summary>
     /// <returns>Return an <see cref="IEntity"/> instance.</returns>
-    protected abstract IEntity Resolve(string key);
+    protected abstract IEntity Resolve([NotNull] string key);
 
     /// <summary>
     /// Create and save <see cref="IEntity"/> instance to the storage.
@@ -145,5 +150,12 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
         serializable.ToYAML(in entity);
 
         return (IEntity)entity;
+    }
+
+    /* TODO: Check for reserved characters in key, before processing these. (Defend from undefined behavior)*/
+    private void CheckReservedChr(ReadOnlySpan<char> buffer) {
+        for(int i = 0; i < buffer.Length; ++i) {
+            
+        }
     }
 }
