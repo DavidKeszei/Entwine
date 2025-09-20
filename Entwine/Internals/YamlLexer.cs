@@ -218,7 +218,17 @@ internal class YamlLexer: IDisposable {
                         flags = 0;
                     }
 
-                    _ = m_file.ReadLine();
+                    
+                    if(m_position.character > 0) {
+                        char tmp = (char)m_file.Peek();
+
+                        while(tmp != NEW_LINE[0] && tmp != NEW_LINE[1])
+                            tmp = (char)m_file.Read();
+                    }
+                    else {
+                        m_file.ReadLine();
+                    }
+
                     ++m_position.line;
 
                     index = 0;

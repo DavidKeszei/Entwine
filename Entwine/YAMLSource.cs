@@ -80,8 +80,8 @@ public struct YAMLSource: IDisposable {
     /// Read one line from the content and step forward the cursor by length of the line.
     /// </summary>
     /// <returns>Return a line. If reached the EOF the content or the character is a newline, then return <see cref="string.Empty"/>.</returns>
-    internal string ReadLine() {
-        if (m_isStream)
+    internal string ReadLine(bool beginInTheLine = true) {
+        if(m_isStream)
             return m_reader.ReadLine() ?? string.Empty;
 
         int newLine = m_str.IndexOf(value: Environment.NewLine, startIndex: m_strReaderPosition, comparisonType: StringComparison.CurrentCulture);
@@ -89,6 +89,7 @@ public struct YAMLSource: IDisposable {
 
         if(newLine == -1) {
             line = m_str[m_strReaderPosition..];
+
             m_strReaderPosition = m_str.Length;
             return line;
         }
