@@ -99,8 +99,6 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
             key = YAMLBase.KEYLESS;
         }
 
-        CheckReservedChr(buffer: key.AsSpan());
-
         IEntity? field = value switch {
             IEntity => Unsafe.As<T, IEntity>(ref value),
 
@@ -150,12 +148,5 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
         serializable.ToYAML(in entity);
 
         return (IEntity)entity;
-    }
-
-    /* TODO: Check for reserved characters in key, before processing these. (Defend from undefined behavior)*/
-    private void CheckReservedChr(ReadOnlySpan<char> buffer) {
-        for(int i = 0; i < buffer.Length; ++i) {
-            
-        }
     }
 }

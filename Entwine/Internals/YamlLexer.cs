@@ -242,7 +242,6 @@ internal class YamlLexer: IDisposable {
 
                     if(buffer[index - 1] == ',' && (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) {
                         CreateInlineCollectionItem(tokens, buffer, index, indentation);
-
                         index = 0;
                         break;
                     }
@@ -293,9 +292,7 @@ internal class YamlLexer: IDisposable {
         };
 
         ReadOnlySpan<char> str = buffer[..index].Trim(trimElements: trims);
-
         tokens.Add(item: new YamlToken(token: str.ToString(), type: YamlTokenType.Value, indentation));
-        _ = m_file.ReadLine();
     }
 
     private bool IsString(YamlLexerFlag flags) 

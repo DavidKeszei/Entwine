@@ -256,7 +256,7 @@ public static class YAMLSerializer {
 
                     break;
                 case YamlTokenType.VerticalArrayIndicator:
-                    if(tokens[index].Type != YamlTokenType.NewLine)
+                    if(tokens[index - 1].Type != YamlTokenType.NewLine)
                         throw new FormatException(message: ERR_MSG_VERTICAL);
 
                     if (isCollectionObjectEntry) {
@@ -392,12 +392,12 @@ public static class YAMLSerializer {
             if(builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION)
                 AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
 
-            builder.Append($"{(parentIsCollection ? YamlLexer.VERTICAL_COLLECTION : string.Empty)} {parent.Key}: ~");
+            builder.Append($"{(parentIsCollection ? YamlLexer.VERTICAL_COLLECTION : string.Empty)} \"{parent.Key}\": ~");
             return;
         }
 
         if (parentIsCollection) builder.Append($"{YamlLexer.VERTICAL_COLLECTION} ");
-        if (parent.Key != YAMLBase.KEYLESS) builder.Append($"{parent.Key}:{YamlLexer.NEW_LINE[1]}");
+        if (parent.Key != YAMLBase.KEYLESS) builder.Append($"\"{parent.Key}\":{YamlLexer.NEW_LINE[1]}");
 
         foreach (IEntity entity in (IEnumerable<IEntity>)parent) {
             if (entity is YAMLBase obj) {
@@ -421,7 +421,7 @@ public static class YAMLSerializer {
         if(str.Contains<char>(value: YamlLexer.NEW_LINE[1]) || str.Length >= YamlLexer.MAX_BUFFER_COUNT) {
 
             bool isContainsNewLine = str.Contains<char>(value: YamlLexer.NEW_LINE[1]);
-            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION} " : string.Empty)}{value.Key}: {(isContainsNewLine ? YamlLexer.STR_MULTILINE : YamlLexer.STR_FLOW)}\n");
+            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION} " : string.Empty)}\"{value.Key}\": {(isContainsNewLine ? YamlLexer.STR_MULTILINE : YamlLexer.STR_FLOW)}\n");
 
             AppendIndentation(builder, indentation + 2);
 
