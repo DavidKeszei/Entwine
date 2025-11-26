@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Linq;
 using System.Runtime.CompilerServices;
@@ -12,7 +13,7 @@ namespace Entwine.Objects;
 /// <summary>
 /// Represent a YAML object from any source.
 /// </summary>
-public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>, ICopyable<YAMLObject> {
+public class YAMLObject: YAMLBase, IEmptiable, IEnumerable<IEntity>, ICopyable<YAMLObject> {
     private Dictionary<string, IEntity> m_entities = null!;
     private bool m_isCopied = false;
 
@@ -59,9 +60,9 @@ public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>,
     /// <summary>
     /// Clear/Reset the current <see cref="YAMLObject"/> instance. 
     /// </summary>
-    public void Clear() {
+    public override void Clear() {
         if(!m_isCopied) {
-            foreach(YAMLBase entity in m_entities.Values) {
+            foreach(IEntity entity in m_entities.Values) {
                 if(entity is IClearable)
                     ((IClearable)entity).Clear();
             }
@@ -83,10 +84,11 @@ public class YAMLObject: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>,
         return copy;
     }
 
-    protected override IEntity Resolve(string key) => this.m_entities[key];
+    protected override IEntity Resolve([NotNull] string key) => this.m_entities[key];
 
     protected override void Create(IEntity entity) {
-        if (entity.Key == YAMLBase.KEYLESS) throw new ArgumentException(message: "The entity must be have a key inside the YAMLObject.");
+        if (entity.Key == YAMLBase.KEYLESS) 
+            throw new ArgumentException(message: "The entity must be have a key inside the YAMLObject.");
 
         if(!m_entities.TryAdd(key: entity.Key, value: entity))
             m_entities[entity.Key] = entity;

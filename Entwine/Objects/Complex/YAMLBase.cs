@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Frozen;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
@@ -14,14 +15,14 @@ namespace Entwine.Objects;
 /// <summary>
 /// Superclass of all YAML specific classes.
 /// </summary>
-public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
+public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, IClearable {
     /// <summary>
-    /// Root identifier for root object in the YAML graph.
+    /// Root identifier for the root object in the YAML document.
     /// </summary>
     public const string ROOT = "<root>";
 
     /// <summary>
-    /// Keyless identifier for keyless <see cref="YAMLBase"/> instances.
+    /// Keyless identifier for keyless <see cref="IEntity"/> instances.
     /// </summary>
     public const string KEYLESS = "<no key>";
 
@@ -92,9 +93,11 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
 
     public void Write<T>(ReadOnlySpan<string> route, string key, T value, string format = null!, IFormatProvider provider = null!) {
         IEntity target = route.IsEmpty ? this : this.Read<YAMLBase>(route)!;
+        key = key.TrimStart(trimChar: YamlLexer.COMMENT);
 
-        if (key == null || key == string.Empty)
+        if (key == null || key == string.Empty) {
             key = YAMLBase.KEYLESS;
+        }
 
         IEntity? field = value switch {
             IEntity => Unsafe.As<T, IEntity>(ref value),
@@ -105,10 +108,12 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
             string => new YAMLValue(key, value: Unsafe.As<T, string>(ref value) == string.Empty ? "~" : Unsafe.As<T, string>(ref value)),
             bool => new YAMLValue(key, value: $"{Unsafe.As<T, bool>(ref value)}"),
 
-            _ => throw new ArgumentException(message: $"The {nameof(value)} must be valid value. (See the function docs)")
+            null => new YAMLValue(key, value: null!),
+            _ => throw new ArgumentException(message: $"The {nameof(value)} must be valid value. (See the documentation)")
         };
 
-        if(target is YAMLBase @base) @base.Create(entity: field);
+        if(target is YAMLBase @base) 
+            @base.Create(entity: field);
     }
 
     public void WriteRange<T>(ReadOnlySpan<string> route, List<(string Key, T Value)> list, string format = null!, IFormatProvider provider = null!) {
@@ -118,11 +123,13 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity {
             target.Write<T>(route: [], key, value, format, provider);
     }
 
+    public abstract void Clear();
+
     /// <summary>
-    /// Resolve an <see cref="IEntity"/> instance independently from the storage of the <see cref="IEntity"/> instances inside the child class.
+    /// Resolve an <see cref="IEntity"/> instance independently from the underlying save data-structure.
     /// </summary>
     /// <returns>Return an <see cref="IEntity"/> instance.</returns>
-    protected abstract IEntity Resolve(string key);
+    protected abstract IEntity Resolve([NotNull] string key);
 
     /// <summary>
     /// Create and save <see cref="IEntity"/> instance to the storage.

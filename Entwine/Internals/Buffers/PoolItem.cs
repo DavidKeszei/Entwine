@@ -10,7 +10,7 @@ namespace Entwine.Buffers;
 /// Smallest unit of the <see cref="ObjectPool{T}"/>.
 /// </summary>
 /// <typeparam name="T">Type of the <see cref="Data"/> instance. Must be implement the <see cref="IClearable"/> interface and must have a parameterless constructor.</typeparam>
-internal record struct PoolItem<T> where T : class, IClearable, new() {
+internal record struct PoolItem<T> where T: class, IClearable, new() {
     private readonly T m_data = default!;
     private bool m_isUsed = false;
 

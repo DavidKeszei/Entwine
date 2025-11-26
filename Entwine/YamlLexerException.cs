@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Entwine;
 
 public class YamlLexerException: Exception {
-    private string _msg = string.Empty;
+    private string m_msg = string.Empty;
 
     public YamlLexerException(string msg, int line, int character): 
         base(message: $"{msg} (Line: {line}, Character: {character})") { }

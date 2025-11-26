@@ -14,7 +14,7 @@ namespace Entwine.Objects;
 /// Represent a collection inside a YAML document.
 /// </summary>
 [DebuggerDisplay(value: "{DebugView(),nq}")]
-public class YAMLCollection: YAMLBase, IClearable, IEmptiable, IEnumerable<IEntity>, ICopyable<YAMLCollection> {
+public class YAMLCollection: YAMLBase, IEmptiable, IEnumerable<IEntity>, ICopyable<YAMLCollection> {
     private readonly List<IEntity> m_collection = null!;
     private bool m_isCopied = false;
 
@@ -47,7 +47,7 @@ public class YAMLCollection: YAMLBase, IClearable, IEmptiable, IEnumerable<IEnti
     public YAMLCollection(): base(key: YAMLBase.KEYLESS, type: YAMLType.Collection)
         => this.m_collection = new List<IEntity>();
 
-    public void Clear() {
+    public override void Clear() {
         if (!m_isCopied) {
             foreach (IEntity entity in m_collection) {
                 if (entity is IClearable)

@@ -16,8 +16,4 @@
     <IsAotCompatible>True</IsAotCompatible>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Folder Include="Docs\Objects\YAMLBase\" />
-  </ItemGroup>
-
 </Project>
