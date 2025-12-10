@@ -9,6 +9,17 @@ __Firstly: just for fun.__ I love to build things from scratch to test my knowle
 
 Last reason is I am very curious doing this without using the Reflection API of the C#. (Mostly this is succeeded, the __IS__ keyword the only reflection based API what I am used)
 
+# Implemented behaviors
+- Object/Values classes in generic form
+- Inline & Vertical collections
+- Inline & Normal object declaration
+- Explicit & Implicit object detection in vertical collections
+- Reflection free (de-)seriaization
+
+# Not Implemented
+- Anchors & References
+- Multi-YAML file declaration (not planned, but this can be changed)
+
 ## Used Technology
 - .NET/C#
 
