@@ -6,6 +6,9 @@ using System.Threading.Tasks;
 
 namespace Entwine;
 
+/// <summary>
+/// Represents an error from the <see cref="YamlLexer"/>.
+/// </summary>
 public class YamlLexerException: Exception {
     private string m_msg = string.Empty;
 

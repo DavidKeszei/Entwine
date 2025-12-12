@@ -41,10 +41,10 @@ public class YAMLCollection: YAMLBase, IEmptiable, IEnumerable<IEntity>, ICopyab
     /// </summary>
     internal List<IEntity> InternalCollection { get => m_collection; }
 
-    public YAMLCollection(string key, params IEnumerable<IEntity> collection): base(key, YAMLType.Collection)
+    public YAMLCollection(string key, params IEnumerable<IEntity> collection): base(key, YAMLType.COLLECTION)
         => this.m_collection = new List<IEntity>(collection);
 
-    public YAMLCollection(): base(key: YAMLBase.KEYLESS, type: YAMLType.Collection)
+    public YAMLCollection(): base(key: YAMLBase.KEYLESS, type: YAMLType.COLLECTION)
         => this.m_collection = new List<IEntity>();
 
     public override void Clear() {

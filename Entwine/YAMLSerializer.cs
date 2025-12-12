@@ -25,7 +25,7 @@ public static class YAMLSerializer {
         NOT allowed use any reserved character in keys & values. If you want use these, then indicates these with '\'' or '\"' as string.
 
         [Good] 
-        'bg-service-name': "common-service"
+        'bg-service-name': 'common-service'
 
         [Bad]
         bg-service-name: common-service
@@ -112,10 +112,10 @@ public static class YAMLSerializer {
                         throw new FormatException(message: "The inline array must have a enclosing character in the YAML file. (\']\')");
 
                     arrayEnd += count;
-                    IEntity[] collectionOf = new YAMLValue[arrayEnd - ++count];
+                    IEntity[] collectionOf = new YAMLField[arrayEnd - ++count];
 
                     for (int i = 0; i < collectionOf.Length; ++i)
-                        collectionOf[i] = new YAMLValue(key: YAMLBase.KEYLESS, tokens[count + i].Value);
+                        collectionOf[i] = new YAMLField(key: YAMLBase.KEYLESS, tokens[count + i].Value);
 
                     IEntity _collection = (IEntity)new YAMLCollection(id, collectionOf);
                     obj.Write<IEntity>(route: [], id, _collection);
@@ -171,7 +171,7 @@ public static class YAMLSerializer {
         YAMLObject obj = new YAMLObject();
         obj.Write<YAMLBase>(route: [], key: customKey ?? nameof(T).ToLower(), value: obj);
 
-        return await Serialize(obj);
+        return await Serialize(source);
     }
 
     /// <summary>
@@ -186,7 +186,7 @@ public static class YAMLSerializer {
 
         foreach (IEntity prop in (IEnumerable<IEntity>)entity) {
             if (prop is IReadableEntity) RecursivelySerialize(prop, builder, indentation: 0, parentIsCollection: false);
-            else AppendValue(builder, (YAMLValue)prop, indentation: 0, parentIsCollection: false);
+            else AppendValue(builder, (YAMLField)prop, indentation: 0, parentIsCollection: false);
         }
 
         return Task.FromResult<string>(result: builder.ToString());
@@ -280,10 +280,10 @@ public static class YAMLSerializer {
                         throw new FormatException(message: "The inline array must have a closer character in the YAML file. (\']\')");
 
                     arrayEnd += index;
-                    IEntity[] collectionOf = new YAMLValue[arrayEnd - ++index];
+                    IEntity[] collectionOf = new YAMLField[arrayEnd - ++index];
 
                     for (int i = 0; i < collectionOf.Length; ++i)
-                        collectionOf[i] = new YAMLValue(key: YAMLBase.KEYLESS, tokens[index + i].Value);
+                        collectionOf[i] = new YAMLField(key: YAMLBase.KEYLESS, tokens[index + i].Value);
 
                     IEntity _collection = (IEntity)new YAMLCollection(id, collectionOf);
 
@@ -297,17 +297,17 @@ public static class YAMLSerializer {
                     break;
                 case YamlTokenType.MultilineStringIndicator:
                     int mStrEnd = FirstIndentationOf(tokens[index].Indentation, tokens[(index + 2)..]);
-                    YAMLValue multilineString = null!;
+                    YAMLField multilineString = null!;
 
                     if (mStrEnd != -1) {
-                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..(index + 2 + mStrEnd)], saveNewlines: tokens[index].Value[0] != YamlLexer.STR_FLOW));
+                        multilineString = new YAMLField(id, CreateMultilineString(tokens[(index + 2)..(index + 2 + mStrEnd)], saveNewlines: tokens[index].Value[0] != YamlLexer.STR_FLOW));
                         index += mStrEnd;
 
                         if(tokens[index + 2].Type == YamlTokenType.VerticalArrayIndicator) index += 2;
                         else index += 3;
                     }
                     else {
-                        multilineString = new YAMLValue(id, CreateMultilineString(tokens[(index + 2)..], saveNewlines: tokens[index].Value[0] != YamlLexer.STR_FLOW));
+                        multilineString = new YAMLField(id, CreateMultilineString(tokens[(index + 2)..], saveNewlines: tokens[index].Value[0] != YamlLexer.STR_FLOW));
                         index = tokens.Length;
                     }
 
@@ -317,7 +317,7 @@ public static class YAMLSerializer {
                     id = null!;
                     break;
                 case YamlTokenType.Value:
-                    if (isVCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLValue(key: id ?? YAMLBase.KEYLESS, value: tokens[index].Value));
+                    if (isVCollection && !isCollectionObjectEntry) collection.InternalCollection.Add(item: new YAMLField(key: id ?? YAMLBase.KEYLESS, value: tokens[index].Value));
                     else obj.Write<string>(route: [], id ?? YAMLBase.KEYLESS, tokens[index].Value);
 
                     id = null!;
@@ -400,7 +400,7 @@ public static class YAMLSerializer {
         }
 
         if (parentIsCollection) builder.Append($"{YamlLexer.VERTICAL_COLLECTION} ");
-        if (parent.Key != YAMLBase.KEYLESS) builder.Append($"\"{parent.Key}\":{YamlLexer.NEW_LINE[1]}");
+        if (parent.Key != YAMLBase.KEYLESS) builder.Append($"\'{parent.Key}\':{YamlLexer.NEW_LINE[1]}");
 
         foreach (IEntity entity in (IEnumerable<IEntity>)parent) {
             if (entity is YAMLBase obj) {
@@ -408,23 +408,23 @@ public static class YAMLSerializer {
                 if (builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION) 
                     AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
 
-                RecursivelySerialize(obj, builder, indentation + 1 + (parentIsCollection ? 1 : 0), parent.TypeOf == YAMLType.Collection);
+                RecursivelySerialize(obj, builder, indentation + 1 + (parentIsCollection ? 1 : 0), parent.TypeOf == YAMLType.COLLECTION);
                 continue;
             }
 
             if(builder.Length > 2 && builder[^2] != YamlLexer.VERTICAL_COLLECTION) AppendIndentation(builder, indentation + 1 + (parentIsCollection ? 1 : 0));
-            AppendValue(builder, (YAMLValue)entity, indentation: indentation + 1 + (parentIsCollection ? 1 : 0), parentIsCollection: parent.TypeOf == YAMLType.Collection);
+            AppendValue(builder, (YAMLField)entity, indentation: indentation + 1 + (parentIsCollection ? 1 : 0), parentIsCollection: parent.TypeOf == YAMLType.COLLECTION);
         }
     }
 
-    private static void AppendValue(StringBuilder builder, YAMLValue value, int indentation, bool parentIsCollection) {
+    private static void AppendValue(StringBuilder builder, YAMLField value, int indentation, bool parentIsCollection) {
         ReadOnlySpan<char> str = value.Read<string>();
 
         /* If the (string) value is more than MAX_BUFFER_COUNT or just contains '\n' character, then that is a multi-lane string. */
         if(str.Contains<char>(value: YamlLexer.NEW_LINE[1]) || str.Length >= YamlLexer.MAX_BUFFER_COUNT) {
 
             bool isContainsNewLine = str.Contains<char>(value: YamlLexer.NEW_LINE[1]);
-            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION} " : string.Empty)}\"{value.Key}\": {(isContainsNewLine ? YamlLexer.STR_MULTILINE : YamlLexer.STR_FLOW)}\n");
+            builder.Append(value: $"{(parentIsCollection ? $"{YamlLexer.VERTICAL_COLLECTION} " : string.Empty)}\'{value.Key}\': {(isContainsNewLine ? YamlLexer.STR_MULTILINE : YamlLexer.STR_FLOW)}\n");
 
             AppendIndentation(builder, indentation + 2);
 

@@ -46,10 +46,10 @@ public class YAMLObject: YAMLBase, IEmptiable, IEnumerable<IEntity>, ICopyable<Y
         }
     }
 
-    public YAMLObject(string key): base(key, type: YAMLType.Object) 
+    public YAMLObject(string key): base(key, type: YAMLType.OBJECT) 
         => this.m_entities = new Dictionary<string, IEntity>(capacity: 16);
 
-    public YAMLObject(): base(key: YAMLBase.KEYLESS, type: YAMLType.Object)
+    public YAMLObject(): base(key: YAMLBase.KEYLESS, type: YAMLType.OBJECT)
         => this.m_entities = new Dictionary<string, IEntity>();
 
     public IEnumerator<IEntity> GetEnumerator() {

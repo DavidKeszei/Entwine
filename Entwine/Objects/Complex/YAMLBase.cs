@@ -27,7 +27,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
     public const string KEYLESS = "<no key>";
 
     private string m_key = string.Empty;
-    private YAMLType m_type = YAMLType.None;
+    private YAMLType m_type = YAMLType.NONE;
 
     /// <summary>
     /// Type of the current <see cref="YAMLBase"/> instance.
@@ -60,7 +60,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
     }
 
     public T Read<T>(ReadOnlySpan<string> route, T onError = default!, IFormatProvider provider = null!) where T: IParsable<T> {
-        YAMLValue? entity = this.Read<YAMLValue>(route);
+        YAMLField? entity = this.Read<YAMLField>(route);
 
         if(entity != null && entity.Read<T>(out T? result, provider))
             return result!;
@@ -84,7 +84,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
     public List<T> ReadRange<T>(ReadOnlySpan<string> route, IFormatProvider provider = null!) where T: IParsable<T> {
         List<T> list = new List<T>();
 
-        foreach (YAMLValue field in this.ReadRange<YAMLValue>(route))
+        foreach (YAMLField field in this.ReadRange<YAMLField>(route))
             if (field != null && field.Read<T>(out T? serialized, provider))
                 list.Add(item: serialized!);
 
@@ -103,12 +103,12 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
             IEntity => Unsafe.As<T, IEntity>(ref value),
 
             ISerializable => CreateEntity(key, serializable: Unsafe.As<T, ISerializable>(ref value)),
-            IFormattable => new YAMLValue(key, ((IFormattable)value).ToString(format, provider)),
+            IFormattable => new YAMLField(key, ((IFormattable)value).ToString(format, provider)),
 
-            string => new YAMLValue(key, value: Unsafe.As<T, string>(ref value) == string.Empty ? "~" : Unsafe.As<T, string>(ref value)),
-            bool => new YAMLValue(key, value: $"{Unsafe.As<T, bool>(ref value)}"),
+            string => new YAMLField(key, value: Unsafe.As<T, string>(ref value) == string.Empty ? "~" : Unsafe.As<T, string>(ref value)),
+            bool => new YAMLField(key, value: $"{Unsafe.As<T, bool>(ref value)}"),
 
-            null => new YAMLValue(key, value: null!),
+            null => new YAMLField(key, value: null!),
             _ => throw new ArgumentException(message: $"The {nameof(value)} must be valid value. (See the documentation)")
         };
 

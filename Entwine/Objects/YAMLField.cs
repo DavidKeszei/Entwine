@@ -12,19 +12,28 @@ namespace Entwine.Objects;
 /// <summary>
 /// Smallest unit of the YAML file.
 /// </summary>
-public class YAMLValue: IEntity, IEmptiable {
+public class YAMLField: IEntity, IEmptiable {
     private readonly string m_key = string.Empty;
     private string m_value = string.Empty;
 
-    private readonly YAMLType m_type = YAMLType.Primitive;
+    private readonly YAMLType m_type = YAMLType.FIELD;
 
+    /// <summary>
+    /// Key of the field.
+    /// </summary>
     public string Key { get => m_key; }
 
+    /// <summary>
+    /// Indicates if the value doesn't contains any value.
+    /// </summary>
     public bool IsEmpty { get => m_value == string.Empty || m_value == YamlLexer.EMPTY || m_value == YamlLexer.NULL; }
 
+    /// <summary>
+    /// Type of the field. This is always <see cref="YAMLType.FIELD"/>
+    /// </summary>
     public YAMLType TypeOf { get => m_type; }
 
-    internal YAMLValue(string key, string value) {
+    internal YAMLField(string key, string value) {
         this.m_key = key;
         this.m_value = value ?? string.Empty;
     }
@@ -38,7 +47,7 @@ public class YAMLValue: IEntity, IEmptiable {
     public bool Read<T>(out T? result, IFormatProvider provider = null!) where T: IParsable<T> {
         result = default!;
 
-        if(m_value == string.Empty || m_value == "~" || m_value == "null") 
+        if(m_value == string.Empty || m_value == YamlLexer.EMPTY || m_value == YamlLexer.NULL) 
             return false;
 
         return T.TryParse(s: m_value, provider, out result);
@@ -54,7 +63,7 @@ public class YAMLValue: IEntity, IEmptiable {
     public T Read<T>(IFormatProvider provider = null!) where T: IParsable<T> => T.Parse(s: m_value, provider);
 
     /// <summary>
-    /// Write <typeparamref name="T"/> value to current <see cref="YAMLValue"/> instance.
+    /// Write <typeparamref name="T"/> value to current <see cref="YAMLField"/> instance.
     /// </summary>
     /// <typeparam name="T">Type of the primitive value.</typeparam>
     /// <param name="value">The value itself.</param>
@@ -71,7 +80,7 @@ public class YAMLValue: IEntity, IEmptiable {
         };
     }
 
-    public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{IsNULL()}" : $"\"{m_key}\": {IsNULL()}";
+    public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{IsNULL()}" : $"\'{m_key}\': {IsNULL()}";
 
-    private string IsNULL() => (m_value == string.Empty ? "~" : m_value);
+    private string IsNULL() => (m_value == string.Empty ? YamlLexer.EMPTY : m_value);
 }
