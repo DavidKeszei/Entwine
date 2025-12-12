@@ -39,9 +39,9 @@ public class YAMLCollection: YAMLBase, IEmptiable, IEnumerable<IEntity>, ICopyab
     /// <summary>
     /// The underlying collection of the current object instance.
     /// </summary>
-    internal List<IEntity> InternalCollection { get => m_collection; } 
+    internal List<IEntity> InternalCollection { get => m_collection; }
 
-    public YAMLCollection(string key, params IEnumerable<IEntity> collection): base(key, YAMLType.Collection) 
+    public YAMLCollection(string key, params IEnumerable<IEntity> collection): base(key, YAMLType.Collection)
         => this.m_collection = new List<IEntity>(collection);
 
     public YAMLCollection(): base(key: YAMLBase.KEYLESS, type: YAMLType.Collection)
@@ -50,6 +50,7 @@ public class YAMLCollection: YAMLBase, IEmptiable, IEnumerable<IEntity>, ICopyab
     public override void Clear() {
         if (!m_isCopied) {
             foreach (IEntity entity in m_collection) {
+
                 if (entity is IClearable)
                     ((IClearable)entity).Clear();
             }

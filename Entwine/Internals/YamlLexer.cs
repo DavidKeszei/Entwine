@@ -33,6 +33,9 @@ internal class YamlLexer: IDisposable {
     internal const char INLINE_COLLECTION_END = ']';
 
     internal const string NEW_LINE = "\r\n";
+    internal const string EMPTY = "~";
+
+    internal const string NULL = "null";
     #endregion
 
     private YAMLSource m_file = default;
@@ -207,9 +210,12 @@ internal class YamlLexer: IDisposable {
                     if(IsString(flags) || (flags & YamlLexerFlag.IS_INLINE_COLLECTION) == YamlLexerFlag.IS_INLINE_COLLECTION) break;
 
                     if((flags & YamlLexerFlag.ASSIGN_CHARACTER_IS_REACHED) == YamlLexerFlag.ASSIGN_CHARACTER_IS_REACHED) {
+                        ReadOnlySpan<char> span = buffer[..(index - 1)].Trim();
 
-                        if(tokens[^1].Type == YamlTokenType.Assign) 
-                            tokens.Add(item: new YamlToken(character: '~', type: YamlTokenType.Value, indentation));
+                        if (tokens[^1].Type == YamlTokenType.Assign && span.Length == 0)
+                            tokens.Add(item: new YamlToken(character: EMPTY[0], type: YamlTokenType.Value, indentation));
+                        else
+                            tokens.Add(item: new YamlToken(token: span.ToString(), type: YamlTokenType.Value, indentation));
                     }
                     else {
                         for(int i = tokens.Count - 1; tokens.Count != 0 && tokens[i].Type != YamlTokenType.NewLine; --i)

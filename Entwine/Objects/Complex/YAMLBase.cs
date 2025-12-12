@@ -129,7 +129,7 @@ public abstract class YAMLBase: IEntity, IWriteableEntity, IReadableEntity, ICle
     /// Resolve an <see cref="IEntity"/> instance independently from the underlying save data-structure.
     /// </summary>
     /// <returns>Return an <see cref="IEntity"/> instance.</returns>
-    protected abstract IEntity Resolve([NotNull] string key);
+    protected abstract IEntity Resolve(string key);
 
     /// <summary>
     /// Create and save <see cref="IEntity"/> instance to the storage.

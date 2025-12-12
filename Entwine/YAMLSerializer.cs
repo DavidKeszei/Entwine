@@ -22,7 +22,7 @@ public static class YAMLSerializer {
     /// </summary>
     private const string ERR_MSG_VERTICAL = 
         """
-        Not allowed use any reserved character in keys & values. If you want use these in keys & values, then indicates these with '\'' or '\"' as string.
+        NOT allowed use any reserved character in keys & values. If you want use these, then indicates these with '\'' or '\"' as string.
 
         [Good] 
         'bg-service-name': "common-service"
@@ -105,8 +105,8 @@ public static class YAMLSerializer {
                     count += 2;
                     break;
                 case YamlTokenType.InlineArrayIndicator:
-                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static (x) => x.Value[0], tokens[count..]);
-                    int newlinePos = IndexOf<YamlToken, char>(searchItem: YamlLexer.NEW_LINE[1], prop: static (x) => x.Value[0], tokens[count..]);
+                    int arrayEnd = IndexOf<char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static (x) => x.Value[0], tokens[count..]);
+                    int newlinePos = IndexOf<char>(searchItem: YamlLexer.NEW_LINE[1], prop: static (x) => x.Value[0], tokens[count..]);
 
                     if ((newlinePos < arrayEnd && newlinePos != -1) || arrayEnd == -1)
                         throw new FormatException(message: "The inline array must have a enclosing character in the YAML file. (\']\')");
@@ -122,6 +122,9 @@ public static class YAMLSerializer {
 
                     count = arrayEnd + 1;
                     break;
+
+                case YamlTokenType.VerticalArrayIndicator:
+                    throw new FormatException(ERR_MSG_VERTICAL);
 
                 case YamlTokenType.StringLiteralIndicator:
                     ++count;
@@ -270,8 +273,8 @@ public static class YAMLSerializer {
                     isCollectionObjectEntry = IsCollectionObjectEntry(tokens[index..]);
                     break;
                 case YamlTokenType.InlineArrayIndicator:
-                    int arrayEnd = IndexOf<YamlToken, char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static(x) => x.Value[0], tokens[index..]);
-                    int newlinePos = IndexOf<YamlToken, char>(searchItem: YamlLexer.NEW_LINE[1], prop: static(x) => x.Value[0], tokens[index..]);
+                    int arrayEnd = IndexOf<char>(searchItem: YamlLexer.INLINE_COLLECTION_END, prop: static(x) => x.Value[0], tokens[index..]);
+                    int newlinePos = IndexOf<char>(searchItem: YamlLexer.NEW_LINE[1], prop: static(x) => x.Value[0], tokens[index..]);
                 
                     if ((newlinePos < arrayEnd && newlinePos != -1) || arrayEnd == -1)
                         throw new FormatException(message: "The inline array must have a closer character in the YAML file. (\']\')");
@@ -367,7 +370,7 @@ public static class YAMLSerializer {
         return -1;
     }
 
-    private static int IndexOf<T, U>(U searchItem, Func<T, U> prop, ReadOnlySpan<T> collection) where U: IEquatable<U> {
+    private static int IndexOf<U>(U searchItem, Func<YamlToken, U> prop, ReadOnlySpan<YamlToken> collection) where U: IEquatable<U> {
         for (int i = 0; i < collection.Length; ++i) {
 
             if ((collection[i] is YamlToken token && token.Value != string.Empty) && prop(collection[i]).Equals(other: searchItem))
@@ -378,7 +381,7 @@ public static class YAMLSerializer {
     }
 
     private static bool IsCollectionObjectEntry(ReadOnlySpan<YamlToken> tokens) {
-        int verticalIndicatorPosition = IndexOf<YamlToken, char>(searchItem: YamlLexer.VERTICAL_COLLECTION, prop: static(x) => x.Value[0], tokens);
+        int verticalIndicatorPosition = IndexOf<char>(searchItem: YamlLexer.VERTICAL_COLLECTION, prop: static(x) => x.Value[0], tokens);
 
         if (verticalIndicatorPosition != -1) 
             return verticalIndicatorPosition > MAX_COLLECTION_ENTRY_TOKEN_COUNT_BY_LINE;

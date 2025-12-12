@@ -29,6 +29,12 @@ public struct YAMLSource: IDisposable {
     internal readonly int PossibleTokenCount { get => TipPossibleTokenCount();  }
 
     /// <summary>
+    /// Implicit conversion between an <see langword="string"/> and <see cref="YAMLSource"/> instance.
+    /// </summary>
+    /// <param name="source">Source data of the <see cref="YAMLSource"/>.</param>
+    public static implicit operator YAMLSource(string source) => new YAMLSource(source);
+
+    /// <summary>
     /// Create new <see cref="YAMLSource"/> instance from a <see cref="Stream"/> instance.
     /// </summary>
     /// <param name="source">YAML source. This can be a file path or a YAML string.</param>

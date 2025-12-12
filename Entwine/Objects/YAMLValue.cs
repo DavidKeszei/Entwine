@@ -20,10 +20,9 @@ public class YAMLValue: IEntity, IEmptiable {
 
     public string Key { get => m_key; }
 
-    public bool IsEmpty { get => m_value == string.Empty || m_value == "~" || m_value == "null"; }
+    public bool IsEmpty { get => m_value == string.Empty || m_value == YamlLexer.EMPTY || m_value == YamlLexer.NULL; }
 
     public YAMLType TypeOf { get => m_type; }
-
 
     internal YAMLValue(string key, string value) {
         this.m_key = key;
@@ -72,7 +71,7 @@ public class YAMLValue: IEntity, IEmptiable {
         };
     }
 
-    public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{IsNULL()}" : $"{m_key}: {IsNULL()}";
+    public override string ToString() => m_key == YAMLBase.KEYLESS ? $"{IsNULL()}" : $"\"{m_key}\": {IsNULL()}";
 
     private string IsNULL() => (m_value == string.Empty ? "~" : m_value);
 }
